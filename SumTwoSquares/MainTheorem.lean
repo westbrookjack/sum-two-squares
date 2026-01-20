@@ -596,7 +596,132 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
       symm
       exact idk.left
 
---The idea of how to correctly set up the induction with the correct scope of s is due to ChatGPT
+theorem toNat_is_1_iff_is_1 (n : ℤ) : n.toNat = 1 ↔ n = 1 := by
+  constructor
+  · contrapose!
+    intro hn_ne1 hn_toNat
+    have hn_eq1 : n = 1 := by
+      cases n with
+      | ofNat k =>
+          have hk : k = 1 := by simpa using hn_toNat
+          simp [hk]
+      | negSucc k =>
+          have : False := by
+            simp at hn_toNat
+          exact False.elim this
+    exact hn_ne1 hn_eq1
+  · intro h
+    rw[h]
+    norm_num
+
+--Written with AI assistance
+theorem toNat_is_m_iff_is_m (n : ℤ) (m : ℕ) (hmpos : m ≠ 0) :
+  n.toNat = m ↔ n = m := by
+constructor
+· intro h
+  have hn0 : 0 ≤ n := by
+    by_contra hn0
+    have hnle : n ≤ 0 := le_of_not_ge hn0
+    have ht : n.toNat = 0 := Int.toNat_of_nonpos hnle
+    have : m = 0 := by simpa [h] using ht
+    exact hmpos this
+  have hof : (Int.ofNat n.toNat) = n :=
+    to_nat_to_int_ge_0 n hn0
+  have : (Int.ofNat m) = n := by
+    simpa [h] using hof
+  simpa using this.symm
+· intro h
+  simp [h]
+
+
+
+
+
+theorem unit_iff_norm_1_nat (z : GaussianInt) : (z.norm).toNat = 1 ↔ IsUnit z := by
+  constructor
+  · intro h
+    have norm_int_is_1 : Zsqrtd.norm z = 1 := by
+      rw[(toNat_is_1_iff_is_1 z.norm).mp]
+      assumption
+    have hminus1le0 : -1 ≤ 0 := by norm_num
+    rw[← Zsqrtd.norm_eq_one_iff' hminus1le0]
+    exact norm_int_is_1
+  · intro h
+    have hminus1le0 : -1 ≤ 0 := by norm_num
+    rw[toNat_is_1_iff_is_1 z.norm]
+    rw[Zsqrtd.norm_eq_one_iff' hminus1le0]
+    exact h
+
+
+
+
+theorem Nat_prime_product_impl_unit
+(p : ℕ) [Fact (Nat.Prime p)] (a b : GaussianInt) (hprod : p = a * b)
+: (a.norm = p ∧ b.norm = p) ∨ IsUnit a ∨ IsUnit b := by
+    have hnormp2 : (p : GaussianInt).norm = p^2 := by
+          rw[Zsqrtd.norm_natCast p]
+          ring
+    have habnorm : a.norm * b.norm = p ^ 2 := by
+        rw[← Zsqrtd.norm_mul a b]
+        rw[← hnormp2]
+        rw[hprod]
+
+    have sumthin : (Zsqrtd.norm a * Zsqrtd.norm b).toNat = ((p: ℤ) ^ 2).toNat := by
+      rw[habnorm]
+    have to_Z_square_back (n : ℕ) : ((n : ℤ)^2).toNat = n^2 := by
+        exact Nat.add_zero (NatPow.pow n 2)
+    rw[to_Z_square_back p] at sumthin
+    have somethink (a b : ℤ) (ha : 0 ≤ a) (hb : 0 ≤ b) : (a * b).toNat = a.toNat * b.toNat := by
+      exact Int.toNat_mul ha hb
+    have hnormage0 : 0≤ a.norm := GaussianInt.norm_nonneg a
+    have hnormbge0 : 0≤ b.norm := GaussianInt.norm_nonneg b
+    have convert_to_Nat_not_1 (n : ℤ) : n ≠ 1 → n.toNat ≠ (1 : ℕ) := by
+      contrapose!
+      exact (toNat_is_1_iff_is_1 n).mp
+    have hminus1le0 : -1 ≤ 0 := by norm_num
+    rw[← unit_iff_norm_1_nat a]
+    rw[← unit_iff_norm_1_nat b]
+    by_cases myhyp : a.norm = p ∧ b.norm = p
+    · left
+      exact myhyp
+    · right
+      by_contra hbothnot1
+      simp at hbothnot1
+      have hpne0 : p ≠ 0 := by exact Ne.symm (NeZero.ne' p)
+      apply (toNat_is_m_iff_is_m (a.norm) p hpne0).mp at hbothnot1
+      have hnorm1divp2 : a.norm = p ∧ b.norm = p := by
+        exact Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p)
+      have newidk : False := by exact (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) hnormane1 hnormbne1).mp)
+      apply (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) hnormane1 hnormbne1).mp) at myhp
+
+
+    have hconvint :  p ^ 2 = a.norm * b.norm := by
+        --exact (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) hnormane1 hnormbne1).mp
+
+
+
+theorem p_mod_4_is_3_is_prime (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [MOD 4]) : _root_.Prime (p : GaussianInt) := by
+  have pnot1mod4not2 : p ≠ 2 ∧ ¬ p ≡ 1 [MOD 4] := by
+    constructor
+    · by_contra hp2
+      rw[hp2] at hpmod4
+      norm_num at hpmod4
+    · by_contra hp1
+      symm at hp1
+      have : 1 ≡ 3 [MOD 4] := by
+        exact ModEq.trans hp1 hpmod4
+      norm_num at this
+  have hexistz : ¬ ∃ z : GaussianInt, p = (Zsqrtd.norm z).toNat := by
+    by_contra myhp
+    apply (sum_two_nat_squares_iff_gaussian_norm p).mpr at myhp
+    apply (prime_sum_two_squares p).mp at myhp
+    tauto
+  have irred_iff_prime : Irreducible (p : GaussianInt) ↔ _root_.Prime (p : GaussianInt) := by
+    exact _root_.irreducible_iff_prime
+  apply (irred_iff_prime).mp
+
+
+--The idea of how to set up the induction with the correct scope of s is due to ChatGPT
 theorem nat_sum_two_square (n : ℕ) :
     (∃ a b : ℕ, n = a^2 + b^2) ↔
       (∀ p ∈ n.primeFactors, p ≡ 3 [MOD 4] → 2 ∣ n.factorization p) := by
@@ -639,11 +764,26 @@ theorem nat_sum_two_square (n : ℕ) :
 
 
 
-    · intro p s hpnotmem ih
+    · intro q s hqnotmem ih
       intro n hn
+      have hpprime : Nat.Prime q := by
+        have hpmem : q ∈ n.primeFactors := by
+          rw[hn]
+          exact Finset.mem_insert_self q s
+        exact prime_of_mem_primeFactors hpmem
+      have hmeminsert (p : ℕ) : p ∈ insert q s ↔  p = q ∨ p ∈ s:= Finset.mem_insert
+
+
       constructor
       · intro h1
         rcases h1 with ⟨a,b,hnab⟩
+        rw[hn]
+        intro p hp
+        rw[hmeminsert p] at hp
+        cases hp with
+        | inl h =>
+          intro h1mod4
+
 
 
 
