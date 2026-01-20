@@ -575,19 +575,13 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
         exact h
       have convert_to_Nat_not_1 (n : ℤ) : n ≠ 1 → n.toNat ≠ (1 : ℕ) := by
         intro hn_ne1 hn_toNat
-        -- prove n = 1 from n.toNat = 1, then contradict hn_ne1
         have hn_eq1 : n = 1 := by
           cases n with
           | ofNat k =>
-              -- n = Int.ofNat k, and toNat is k
-              -- hn_toNat becomes k = 1
               have hk : k = 1 := by simpa using hn_toNat
-              -- so n = 1
               simp [hk]
           | negSucc k =>
-              -- (Int.negSucc k).toNat is 0, so hn_toNat becomes 0 = 1
               have : False := by
-                -- simp turns hn_toNat into an impossible equality
                 simp at hn_toNat
               exact False.elim this
         exact hn_ne1 hn_eq1
