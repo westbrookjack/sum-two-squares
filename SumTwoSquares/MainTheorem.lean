@@ -3,10 +3,6 @@ import Mathlib
 open Nat
 open GaussianInt
 
-example (p : ℕ) (h : p ≡ 0 [MOD 2]) : ∃ n : ℕ, p = 2 * n := by
-have hdiv: 2 ∣ p := Nat.modEq_zero_iff_dvd.1 h
-rcases hdiv with ⟨n, hn⟩
-use n
 
 theorem p_not_2_is_odd (p : ℕ) (hP : Nat.Prime p) : p = 2 ↔ p ≡ 0 [MOD 2] := by
 constructor
@@ -66,11 +62,6 @@ theorem nums_le_4 (m : ℕ) (hm : m < 4) : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 :
           cases h01 with
           | inl h => right; right; left; rw[h]
           | inr h => right; right; right; rw[h]
-
-
-
-example (m n : ℕ) (h : m + 1 < n + 1) : m < n := by
-  simpa [Nat.succ_eq_add_one] using h
 
 
 theorem odd_prime_1_or_3_mod_4 (p : ℕ) [hp : Fact (Nat.Prime p)]
@@ -189,7 +180,7 @@ theorem sum_two_int_squares_iff_gaussian_norm (n : ℕ) :
   constructor
   · intro h
     rcases h with ⟨a,b,hab⟩
-    refine ⟨(⟨(a : ℤ), (b : ℤ)⟩ : GaussianInt), ?_⟩
+    use ((⟨(a : ℤ), (b : ℤ)⟩) : GaussianInt)
     rw[hab]
     rw[Zsqrtd.norm_def]
     simp
@@ -604,3 +595,59 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
       apply final_prop at idk
       symm
       exact idk.left
+
+--The idea of how to correctly set up the induction with the correct scope of s is due to ChatGPT
+theorem nat_sum_two_square (n : ℕ) :
+    (∃ a b : ℕ, n = a^2 + b^2) ↔
+      (∀ p ∈ n.primeFactors, p ≡ 3 [MOD 4] → 2 ∣ n.factorization p) := by
+  let P : Finset ℕ → Prop :=
+    fun s =>
+      ∀ n : ℕ, n.primeFactors = s →
+        ((∃ a b : ℕ, n = a^2 + b^2) ↔
+          (∀ p ∈ n.primeFactors, p ≡ 3 [MOD 4] → 2 ∣ n.factorization p))
+
+  have hP : P n.primeFactors := by
+    classical
+    refine Finset.induction_on (s := n.primeFactors) ?base ?step
+    · intro n hn
+      have hn01 : n = 0 ∨ n = 1 := by
+        simpa only [primeFactors_eq_empty] using hn
+      cases hn01 with
+      | inl h =>
+          constructor
+          · intro hred
+            repeat rw[hn]
+            intro p hp
+            exfalso
+            exact (List.mem_nil_iff p).mp hp
+          · intro hred
+            use 0, 0
+            linarith
+
+      | inr h =>
+          constructor
+          · intro hred
+            intro p hp
+            rw[hn] at hp
+            exfalso
+            exact (List.mem_nil_iff p).mp hp
+          · intro hred
+            use 1 , 0
+            linarith
+
+
+
+
+
+    · intro p s hpnotmem ih
+      intro n hn
+      constructor
+      · intro h1
+        rcases h1 with ⟨a,b,hnab⟩
+
+
+
+
+
+  -- finally apply hP to your original n (this last line is usually `exact (hP n rfl)` if you’re not inlined)
+  exact hP n rfl
