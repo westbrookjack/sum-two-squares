@@ -653,6 +653,41 @@ theorem unit_iff_norm_1_nat (z : GaussianInt) : (z.norm).toNat = 1 ↔ IsUnit z 
     exact h
 
 
+theorem prod_Nat_is_p2
+ (a b p : ℕ) [Fact (Nat.Prime p)] (heq : a * b = p ^ 2)
+ : (a = p ∧ b = p) ∨ a=1 ∨ b = 1 := by
+  by_cases ha : a=1
+  · right
+    left
+    exact ha
+  · by_cases hb : b=1
+    · right
+      right
+      exact hb
+    · left
+      apply (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) ha hb).mp
+      exact heq
+
+theorem eq_Nat_impl_eq_Int (a : ℤ) (b : ℕ) (ha : 0 ≤ a) (heq : a.toNat = b) : a = ↑b := by
+  by_cases h : b = 0
+  · rw[h]at heq
+    have thm1 (n : ℤ) (hn : 0 ≤ n) : n.toNat = 0 →  n = 0 := by
+      intro hyp
+      have thm2 (n : ℤ) : n.toNat = 0 → (n.toNat : ℤ) = 0 := by
+        exact fun a ↦ (fun {n} ↦ Int.ofNat_eq_zero.mpr) a
+      apply (thm2 n) at hyp
+      have : Int.ofNat n.toNat = ↑ n.toNat := by exact Int.ofNat_eq_natCast n.toNat
+      symm at this
+      rw[this] at hyp
+      rw [to_nat_to_int_ge_0 n hn] at hyp
+      exact hyp
+    rw[h]
+    simp only [CharP.cast_eq_zero]
+    apply thm1 a ha
+    exact heq
+  · rw [toNat_is_m_iff_is_m a b h] at heq
+    exact heq
+
 
 
 theorem Nat_prime_product_impl_unit
@@ -665,7 +700,6 @@ theorem Nat_prime_product_impl_unit
         rw[← Zsqrtd.norm_mul a b]
         rw[← hnormp2]
         rw[hprod]
-
     have sumthin : (Zsqrtd.norm a * Zsqrtd.norm b).toNat = ((p: ℤ) ^ 2).toNat := by
       rw[habnorm]
     have to_Z_square_back (n : ℕ) : ((n : ℤ)^2).toNat = n^2 := by
@@ -681,22 +715,26 @@ theorem Nat_prime_product_impl_unit
     have hminus1le0 : -1 ≤ 0 := by norm_num
     rw[← unit_iff_norm_1_nat a]
     rw[← unit_iff_norm_1_nat b]
-    by_cases myhyp : a.norm = p ∧ b.norm = p
-    · left
-      exact myhyp
-    · right
-      by_contra hbothnot1
-      simp at hbothnot1
-      have hpne0 : p ≠ 0 := by exact Ne.symm (NeZero.ne' p)
-      apply (toNat_is_m_iff_is_m (a.norm) p hpne0).mp at hbothnot1
-      have hnorm1divp2 : a.norm = p ∧ b.norm = p := by
-        exact Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p)
-      have newidk : False := by exact (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) hnormane1 hnormbne1).mp)
-      apply (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) hnormane1 hnormbne1).mp) at myhp
-
-
-    have hconvint :  p ^ 2 = a.norm * b.norm := by
-        --exact (Nat.Prime.mul_eq_prime_sq_iff (Fact.out : Nat.Prime p) hnormane1 hnormbne1).mp
+    rw[somethink a.norm b.norm hnormage0 hnormbge0] at sumthin
+    have good_fact :
+     ((a.norm).toNat = p ∧ (b.norm).toNat = p) ∨ (a.norm).toNat = 1 ∨ (b.norm).toNat = 1
+     := prod_Nat_is_p2 (a.norm).toNat (b.norm).toNat p sumthin
+    cases good_fact with
+    | inl h =>
+        left
+        constructor
+        · exact eq_Nat_impl_eq_Int a.norm p hnormage0 h.1
+        · exact eq_Nat_impl_eq_Int b.norm p hnormbge0 h.2
+    | inr h =>
+        cases h with
+        | inl h' =>
+            right
+            left
+            exact h'
+        | inr h' =>
+            right
+            right
+            exact h'
 
 
 
