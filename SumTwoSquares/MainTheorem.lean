@@ -737,8 +737,17 @@ theorem Nat_prime_product_impl_unit
             exact h'
 
 
+theorem Nat_prime_not_pm1 (p : ℕ) [pFact : Fact (Nat.Prime p)] : p ≠ 1 ∧ (p : ℤ) ≠ -1 := by
+  constructor
+  · by_contra c
+    have hp : Nat.Prime p := pFact.out
+    rw[c] at hp
+    exact prime_one_false hp
+  · exact Ne.symm (not_eq_of_beq_eq_false rfl)
 
-theorem p_mod_4_is_3_is_prime (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [MOD 4]) : _root_.Prime (p : GaussianInt) := by
+
+theorem p_mod_4_is_3_is_prime
+(p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [MOD 4]) : _root_.Prime (p : GaussianInt) := by
   have pnot1mod4not2 : p ≠ 2 ∧ ¬ p ≡ 1 [MOD 4] := by
     constructor
     · by_contra hp2
@@ -757,6 +766,117 @@ theorem p_mod_4_is_3_is_prime (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [
   have irred_iff_prime : Irreducible (p : GaussianInt) ↔ _root_.Prime (p : GaussianInt) := by
     exact _root_.irreducible_iff_prime
   apply (irred_iff_prime).mp
+  have hm1le0 : -1 ≤ 0 := by norm_num
+  rw[irreducible_iff]
+  constructor
+  · rw[← Zsqrtd.norm_eq_one_iff' hm1le0]
+    have : ((p : GaussianInt).norm) = (p : ℤ)^2 := by
+      rw[Zsqrtd.norm_natCast p]
+      ring
+    rw[this]
+    norm_num
+    constructor
+    · exact (Nat_prime_not_pm1 p).1
+    · exact (Nat_prime_not_pm1 p).2
+  · intro a b hab
+    have newcases: (a.norm = p ∧ b.norm = p) ∨ IsUnit a ∨ IsUnit b := by
+      exact Nat_prime_product_impl_unit p a b hab
+    cases newcases with
+    | inl h =>
+        exfalso
+        have existz : ∃ z : GaussianInt, p =z.norm := by
+          use a
+          symm
+          exact h.1
+        have p_sum_two_int_square : ∃ c d : ℤ, p = c^2 + d^2 := by
+          rw[sum_two_int_squares_iff_gaussian_norm p]
+          exact existz
+        have p_sum_two_nat_square : ∃ m n : ℕ, p = m^2 + n^2 := by
+          exact (sum_two_squares_Z_iff_N p).mp p_sum_two_int_square
+        rw[prime_sum_two_squares p] at p_sum_two_nat_square
+        cases p_sum_two_nat_square with
+        | inl h' => rw[h'] at hpmod4; norm_num at hpmod4
+        | inr h' =>
+            have h1 : 1 ≡ p [MOD 4] := h'.symm
+            have h1 : 1 ≡ 3 [MOD 4] := by exact ModEq.trans h1 hpmod4
+            norm_num at h1
+    | inr h => exact h
+
+theorem exists_sqfree_mul_sq (n : ℕ) :
+    ∃ d m : ℕ, n = d * m^2 ∧ Squarefree d := by
+  rcases Nat.sq_mul_squarefree n with ⟨d, m, h, hd⟩
+  refine ⟨d, m, ?_, hd⟩
+  have : n = m^2 * d := by
+    simpa using h.symm
+  simpa [mul_comm] using this
+
+--Written with AI assistance
+noncomputable def squarefreePart (n : ℕ) : ℕ :=
+  (Nat.sq_mul_squarefree n).choose
+
+--Written with AI assistance
+theorem exists_b_sq_mul_squarefreePart (n : ℕ) :
+    ∃ b : ℕ, n = b^2 * squarefreePart n := by
+  refine ⟨(Nat.sq_mul_squarefree n).choose_spec.choose, ?_⟩
+  have h :
+      ((Nat.sq_mul_squarefree n).choose_spec.choose)^2 * squarefreePart n = n :=
+    (Nat.sq_mul_squarefree n).choose_spec.choose_spec.left
+  exact h.symm
+
+--Written with AI assistance
+theorem squarefree_squarefreePart (n : ℕ) : Squarefree (squarefreePart n) := by
+  rcases (Nat.sq_mul_squarefree n).choose_spec with ⟨b, hb⟩
+  exact hb.2
+
+
+
+
+theorem odd_part_decomp {n : ℕ} (hn : n ≠ 0) :
+    ∃ r m : ℕ, n = 2^r * m ∧ Odd m := by
+  rcases Nat.exists_eq_two_pow_mul_odd (n := n) hn with ⟨r, m, hmOdd, hnm⟩
+  exact ⟨r, m, hnm, hmOdd⟩
+
+def countPrimeFactorsMod4Eq3 (n : ℕ) : ℕ :=
+  ∑ p ∈  (Nat.factorization n).support,
+    if p % 4 = 3 then Nat.factorization n p else 0
+
+/--
+If `n ≡ 1 [MOD 4]` and `n = a^2 + b^2`, then the number (with multiplicity)
+of prime factors of `n` congruent to `3 mod 4` is even.
+-/
+theorem sumTwoSquares_implies_even_count_mod4eq3
+    (n : ℕ)
+    (hn : 0 < n)
+    (hmod : n ≡ 1 [MOD 4])
+    (hsum : ∃ a b : ℕ, n = a^2 + b^2) :
+    Even (countPrimeFactorsMod4Eq3 n) :=
+by
+  -- proof goes here
+  sorry
+
+theorem sum_two_squares_iff_odd_part_is {n r m: ℕ} (hdec : Odd m ∧  n = 2^r * m ) : (∃ a b : ℕ, n = a^2 + b^2) ↔ (∃ c d : ℕ, m = c^2 + d^2) := by
+  constructor
+  · intro h
+    rcases h with ⟨a, b, hab⟩
+    rw[hdec.2] at hab
+    by_cases h : r ≤ 1
+    · have hr01: r = 0 ∨ r = 1 := by
+        exact le_one_iff_eq_zero_or_eq_one.mp h
+      cases hr01 with
+      | inl hr0 =>
+        rw[hr0] at hab
+        simp at hab
+        use a,b
+      | inr hr1 =>
+        rw[hr1] at hab
+        simp at hab
+        have h2m_mod_4 : 2*m ≡ 2 [MOD 4] := by
+
+    ·
+
+
+
+  ·
 
 
 --The idea of how to set up the induction with the correct scope of s is due to ChatGPT
@@ -804,16 +924,29 @@ theorem nat_sum_two_square (n : ℕ) :
 
     · intro q s hqnotmem ih
       intro n hn
-      have hpprime : Nat.Prime q := by
+      have hqprime : Nat.Prime q := by
         have hpmem : q ∈ n.primeFactors := by
           rw[hn]
           exact Finset.mem_insert_self q s
         exact prime_of_mem_primeFactors hpmem
       have hmeminsert (p : ℕ) : p ∈ insert q s ↔  p = q ∨ p ∈ s:= Finset.mem_insert
 
-
       constructor
-      · intro h1
+      · /-Sketch: define m to be the product of all the primes in s raised to their valuations;
+        equivalently m = n/q^r where r is the q-adic valuation of n.
+        By the inductive hypothesis, for each p in m.primeFactors, p≡3 [MOD 4], 2 ∣ m.factorization p
+        Then we prove that for all primes p ≠ q, m.factorization p = n.factorization p
+        Then we split into cases based on p = q or p ≠ q, the latter case done by rw
+        We suppose for a contradiction that 2 ∣ n.factorization q
+        We write m = x.norm for some x : GaussianInt
+        Now we show n/q = (x*q^(r/2)).norm (Note : we use the fact that r/2 = (r-1)/2))
+        We write q^r as (q^(r/2)).norm
+        Then (x * q^(r/2)).norm =
+        Using a theorem to be proved, that x.norm = y.norm ↔ ∃ u, IsUnit u, y = u * x, we conclude
+        from z.norm = n = ()
+
+        -/
+        intro h1
         rcases h1 with ⟨a,b,hnab⟩
         rw[hn]
         intro p hp
