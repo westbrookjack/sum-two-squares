@@ -1310,9 +1310,7 @@ theorem sum_split (α β : Type) [DecidableEq α] [AddCommMonoid β]
 (s : Finset α) (f : α → β) {p : α} (hp : p ∈ s) :
         (∑ q ∈  s, f q) = f p + ∑ q ∈  s.erase p, f q := by
       have hs : insert p (s.erase p) = s := by
-        simp only [Finset.insert_erase hp]  -- insert p (erase p s) = s
-
-      -- now use sum_insert
+        simp only [Finset.insert_erase hp]
       have hpnot : p ∉ s.erase p := by simp
       calc
         (∑ q ∈  s, f q)
