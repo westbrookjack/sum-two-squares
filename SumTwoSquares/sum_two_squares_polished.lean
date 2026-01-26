@@ -4,7 +4,8 @@ open Nat
 open GaussianInt
 
 
-
+--This lemma proves that for any natural number a and n>0, there is some representative of
+-- a modulo n in the interval [0, n-1]
 lemma residues_mod_n (a n : ℕ) (hn : n > 0) : ∃ m: ℕ, m < n ∧ a ≡ m [MOD n] := by
   use (a%n)
   constructor
@@ -13,6 +14,7 @@ lemma residues_mod_n (a n : ℕ) (hn : n > 0) : ∃ m: ℕ, m < n ∧ a ≡ m [M
   · rw[Nat.ModEq.comm]
     exact Nat.mod_modEq a n
 
+--This lemma proves that the only natural numbers less than two are 0 and 1
 lemma nums_le_2 (m : ℕ) (hm : m < 2) : m = 0 ∨ m = 1 := by
   cases m with
   | zero =>
@@ -28,6 +30,7 @@ lemma nums_le_2 (m : ℕ) (hm : m < 2) : m = 0 ∨ m = 1 := by
       right
       rw[m_equals_0]
 
+--This lemma proves that the only natural numbers less than 4 are 0,1,2, and 3
 lemma nums_lt_4 (m : ℕ) (hm : m < 4) : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := by
   cases m with
   | zero =>
@@ -48,9 +51,11 @@ lemma nums_lt_4 (m : ℕ) (hm : m < 4) : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := 
           | inl h => right; right; left; rw[h]
           | inr h => right; right; right; rw[h]
 
-
+--This lemma proves that every prime is either 2,
+--congruent to 1 modulo 4, or congruent to 3 modulo 4
 lemma odd_prime_1_or_3_mod_4 (p : ℕ) [hp : Fact (Nat.Prime p)]
   : p=2 ∨ p≡ 1 [MOD 4] ∨ p≡ 3 [MOD 4] := by
+  -- We break into cases based on whether p = 2 or p ≠ 2, the former case being trivial
   by_cases h : (p=2)
   · left
     exact h
@@ -58,8 +63,12 @@ lemma odd_prime_1_or_3_mod_4 (p : ℕ) [hp : Fact (Nat.Prime p)]
   · have hp4 : ∃ m : ℕ, m < 4 ∧ p ≡ m [MOD 4] := residues_mod_n p 4 (by norm_num)
     rcases hp4 with ⟨m, hm, heq⟩
     have hm4 : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := nums_lt_4 m hm
+    --Here we break into cases based on the possible residues of m modulo 4, where
+    -- m is the representative of p modulo 4 in [0,3]
     cases hm4 with
     | inl h0 =>
+        --We prove here that a prime cannot be congruent to 0 modulo 4 because otherwise 4 divides
+        --it, and yet 4 is not prime
         exfalso
         rw[h0] at heq
         have hdiv: 4 ∣ p := Nat.modEq_zero_iff_dvd.1 heq
@@ -74,12 +83,15 @@ lemma odd_prime_1_or_3_mod_4 (p : ℕ) [hp : Fact (Nat.Prime p)]
     | inr h123 =>
         cases h123 with
         | inl h1 =>
+            --This case, p ≡ 1 [MOD 4] is trivial
             left
             rw[h1] at heq
             exact heq
         | inr h23 =>
             cases h23 with
             | inl h2 =>
+                --Here we prove that a prime not 2 cannot be congruent to 2 modulo 4 by reducing
+                --the assumption p ≡ 2 [MOD 4] to p ≡ 0 [MOD 2] and then deriving that p = 2
                 exfalso
                 rw[h2] at heq
                 have h2div4 : 2 ∣ 4 := by norm_num
@@ -91,6 +103,7 @@ lemma odd_prime_1_or_3_mod_4 (p : ℕ) [hp : Fact (Nat.Prime p)]
                 rw[← h2divpiffpis2]
                 rw[h2divpiff]
             | inr h3 =>
+                --Again, this case p ≡ 3 [MOD 4] is trivial
                 right
                 rw[h3] at heq
                 exact heq
@@ -98,12 +111,13 @@ lemma odd_prime_1_or_3_mod_4 (p : ℕ) [hp : Fact (Nat.Prime p)]
 
 
 
-
+--This lemma classifies 0 and 1 being the only possible residues of a square modulo 4
 lemma squares_mod_4 (a : ℕ) : a^2 ≡ 0 [MOD 4] ∨ a^2 ≡ 1 [MOD 4] := by
   have hp4 : ∃ m : ℕ, m < 4 ∧ a ≡ m [MOD 4] := residues_mod_n a 4 (by norm_num)
   rcases hp4 with ⟨m, hm, heq⟩
   have hm4 : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 := nums_lt_4 m hm
   have hpow : a^2 ≡ m^2 [MOD 4] := by exact Nat.ModEq.pow 2 heq
+  --Here we just break into cases based on which number in [0,3] represents a modulo 4
   cases hm4 with
   | inl h0 =>
       rw[h0] at hpow
@@ -126,6 +140,8 @@ lemma squares_mod_4 (a : ℕ) : a^2 ≡ 0 [MOD 4] ∨ a^2 ≡ 1 [MOD 4] := by
               right
               exact hpow
 
+--This lemma classifies 0,1, and 2 as the only possible residues of the sum of two squares
+--modulo 4. This is just by a simple case division with the above lemma
 lemma sum_of_squares_mod_4 (a b : ℕ) :
     a^2 + b^2 ≡ 0 [MOD 4] ∨ a^2 + b^2 ≡ 1 [MOD 4] ∨
     a^2 + b^2 ≡ 2 [MOD 4] := by
@@ -159,18 +175,22 @@ lemma sum_of_squares_mod_4 (a b : ℕ) :
           have hsum : a^2 + b^2 ≡ 1 + 1 [MOD 4] := by exact Nat.ModEq.add ha1 hb1
           exact hsum
 
+--This theorem gives a classification for when an integer can be written as the sum of two
+--integer squares in terms of the Gaussian integers
 theorem sum_two_int_squares_iff_gaussian_norm (n : ℕ) :
   (∃ a b : ℤ , n = a^2 + b^2) ↔
   (∃ z : GaussianInt, n = Zsqrtd.norm z) := by
   constructor
-  · intro h
+  · --For the forward direction the idea is to use z = a+bi
+    intro h
     rcases h with ⟨a,b,hab⟩
     use ((⟨(a : ℤ), (b : ℤ)⟩) : GaussianInt)
     rw[hab]
     rw[Zsqrtd.norm_def]
     simp
     simp[pow_two]
-  · intro h
+  · --For the backward direction, if n = z.norm and z = a+bi, then a^2+b^2 = n by definition
+    intro h
     rcases h with ⟨z, hz⟩
     use z.re, z.im
     rw[hz]
@@ -178,12 +198,16 @@ theorem sum_two_int_squares_iff_gaussian_norm (n : ℕ) :
     simp
     simp[pow_two]
 
+--This lemma says that for a nonnegative integer n, casting n as a natural number and then back
+--to an integer does not change the value of n
 lemma to_nat_to_int_ge_0 (n : ℤ) (hn : 0 ≤ n) : Int.ofNat n.toNat = n := by
   simp only [Int.ofNat_eq_natCast, Int.ofNat_toNat, sup_eq_left]
   exact hn
 
 
-
+--This lemma states that for an integer n and natural numbers a and b,
+--if n=a^2+b^2 as integers, then
+-- n = a^2 + b^2 as natural numbers.
 lemma sum_of_squares_to_nat (n : ℕ) (a b : ℤ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
     Int.ofNat n = a^2 + b^2 → n = a.toNat^2 + b.toNat^2 := by
   intro h
@@ -200,11 +224,15 @@ lemma sum_of_squares_to_nat (n : ℕ) (a b : ℤ) (ha : 0 ≤ a) (hb : 0 ≤ b) 
   rw[Int.toNat_pow_of_nonneg ha 2, Int.toNat_pow_of_nonneg hb 2]
 
 
+--This lemma proves that a natural number can be written as the sum of two integer squares
+--iff it can be written as the sum of two natural number squares
 lemma sum_two_squares_Z_iff_N (n : ℕ) :
   (∃ a b : ℤ, n = a^2 + b^2) ↔
   (∃ c d : ℕ, n = c^2 + d^2) := by
   constructor
-  · intro h
+  · --The idea is to consider whether a and b are negative or not, and negate them accordingly
+     -- and cast the result as a natural number. The reverse direction is easy
+    intro h
     rcases h with ⟨a,b,hab⟩
     by_cases ha : 0 ≤ a
     · by_cases hb : 0 ≤ b
@@ -246,6 +274,8 @@ lemma sum_two_squares_Z_iff_N (n : ℕ) :
     rw[hcd]
     exact ToInt.add_congr rfl rfl
 
+--We prove that for a Gaussian integer z and an integer n, n (viewed as an integer)
+--is the norm of z iff n is the norm of z (viewed as a natural number)
 lemma gaussian_norms_are_nat (z : GaussianInt) (n : ℕ)
     : n = Zsqrtd.norm z ↔ n = (Zsqrtd.norm z).toNat := by
   constructor
@@ -259,7 +289,7 @@ lemma gaussian_norms_are_nat (z : GaussianInt) (n : ℕ)
     rw[h']
     rw[to_nat_to_int_ge_0 (Zsqrtd.norm z) myh]
 
-
+--We combine our above lemmas with our theorem to get the result without any mathematical depth
 lemma sum_two_nat_squares_iff_gaussian_norm (n : ℕ) :
   (∃ a b : ℕ, n = a^2 + b^2) ↔
   (∃ z : GaussianInt, n = (Zsqrtd.norm z).toNat) := by
@@ -286,7 +316,9 @@ lemma sum_two_nat_squares_iff_gaussian_norm (n : ℕ) :
 
 
 
--- This lemma was partially guided with AI assistance
+-- This lemma's syntax was partially guided with AI assistance
+-- Here we lift a root of the polynomial X^2+1 over  𝔽_p to a root of the polynomial
+-- X^2+1 over ℤ modulo p. The idea is just to use any lift of a root in 𝔽_p
 lemma lift_y2_plus_1 (p : ℕ) [Fact (Nat.Prime p)]
   (y : ZMod p) (hy : y ^ 2 + 1 = 0) :
   ∃ x : ℕ, p ∣ x^2 + 1 := by
@@ -295,7 +327,8 @@ lemma lift_y2_plus_1 (p : ℕ) [Fact (Nat.Prime p)]
     simp only [cast_add, cast_pow, ZMod.natCast_val, ZMod.cast_id', id_eq, cast_one]
     exact hy
 
--- This lemma was partially guided with AI assistance
+-- This lemma's syntax was partially guided with AI assistance
+-- We prove that if p = 1+ 4* t, then p/2 = 2*t, which is, in particular, even
 lemma half_of_one_add_four_mul
   (p t : ℕ) (ht : p = 1 + 4 * t) :
   p / 2 = 2 * t := by
@@ -310,11 +343,17 @@ lemma half_of_one_add_four_mul
 
 
 
-
+--Here we show that for any prime congruent to 1 modulo 4, p must divide x^2+1 for some number x
 theorem primes_w_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 1 [MOD 4])
  : ∃ x : ℕ, p ∣ x^2+1 := by
   have hn1 : (-1 : ZMod p) ≠ (0 : ZMod p) := by
     norm_num
+  --This assumption, that -1 is a square modulo p iff (-1)^(p/2) = 1 is easy to prove with the
+  --exact sequence of abelian groups 0 → 𝔽_p^* → 𝔽_p^* → {± 1} → 0, where the second
+  -- arrow is just the map x↦x^2 and the third is x ↦ x^(p/2) (recalling p/2 = (p-1)/2).
+  --Alternitively, one can prove the primitive root theorem, that the multiplicative group
+  --of 𝔽_p is cyclic, and prove the claim directly from this.
+  --However, since it's in MathLib, I see no need to reprove this
   have h1 : (-1 : ZMod p)^(p/2) = 1 → IsSquare (-1 : ZMod p) := by
     exact (ZMod.euler_criterion p hn1).mpr
   have h1lep : 1 ≤ p := by exact NeZero.one_le
@@ -324,6 +363,8 @@ theorem primes_w_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 1 [M
     exact hpmod4
   rcases eucl_alg with ⟨t, ht⟩
   have hpover2 : p / 2 = 2 * t := half_of_one_add_four_mul p t ht
+  --We prove that -1 is a square modulo p by using h1 to prove instead that (-1)^(p/2) =1, which is
+  -- an easy computation by our lemma that tells us p/2 = 2*t for some t
   have h2 : IsSquare (-1 : ZMod p) := by
     apply h1
     rw[hpover2]
@@ -334,8 +375,11 @@ theorem primes_w_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 1 [M
   have myh : y^2+1 = 0 := by
     rw[hy]
     norm_num
+  --Finally, we lift our constructedroot of y^2+1=0 in 𝔽_p to an integer root modulo p
   exact lift_y2_plus_1 p y myh
 
+--We do not need this result to prove our classification of when primes can be written
+--as the sum of two squares, only for later results
 theorem primes_wo_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [MOD 4])
   : ¬ IsSquare (-1 : ZMod p) := by
   have hn1 : (-1 : ZMod p) ≠ (0 : ZMod p) := by
@@ -357,6 +401,8 @@ theorem primes_wo_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [
     by_contra c
     rw[c] at hpmod4
     cases hpmod4
+  --We need this inequality to get a lift to the natural numbers of p = 3+4*t.
+  --The logic is just to use case division repeatedly and the result that 2 ≤ p
   have h3lep : 3 ≤ p := by
     cases p with
     | zero =>
@@ -378,12 +424,18 @@ theorem primes_wo_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [
     apply Nat.ModEq.symm
     exact hpmod4
   rcases eucl_alg with ⟨t, ht⟩
+  --Here we use the forwards direction of the criterion -1 is a square modulo p
+  -- iff (-1)^(p/2) = 1 in ZMod p
   have h1 : IsSquare (-1 : ZMod p) → (-1 : ZMod p)^(p/2) = 1 := by
     exact (ZMod.euler_criterion p hn1).mp
+  --We assume for a contradiction that -1 is a square modulo p
   by_contra c
   apply h1 at c
   have hpover2 : p/2 = 1 + 2*t := by
     rw[ht]
+    --This tactic will turn our goal (3+4*t)/2 = 1+2*t into two two subgoals,
+    --(1 + 2 * t) * 2 ≤ 3 + 4 * t first and 3 + 4 * t < (1 + 2 * t + 1) * 2 second.
+    --These goals are just by simplifying each expression
     refine Nat.div_eq_of_lt_le ?_ ?_
     · have : (1+2*t)*2 = 2 + 4* t := by
         rw[add_mul 1 (2*t) 2]
@@ -425,6 +477,7 @@ theorem primes_wo_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [
     apply (ZMod.natCast_eq_zero_iff 2 p).mp
     exact h2
   apply hpm2implpis2 at hpdiv2
+  --To show ¬(p = 1 ∨ p = 2) is easy by our assumption that p ≡ 3 [MOD 4]
   cases hpdiv2 with
   | inl h =>
     rw[h] at hpmod4
@@ -435,12 +488,12 @@ theorem primes_wo_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [
 
 
 
-
+--Simple transfer of the symbol ≡ to the symbol %
 lemma mod4_rw (n : ℕ) (hn : n ≡ 1 [MOD 4]) : n%4=1 := by
   exact Eq.symm (Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd (id (ModEq.symm hn))) n))
 
 
-
+--The lemmas here are all just helper lemmas for the result on primes being the sum of two squares
 lemma contra_via_unit_irreducible (p : ℤ) (hirr : Irreducible p) :
     ¬ (p ∣ 1) := by
   intro h
@@ -483,19 +536,26 @@ have hprime : _root_.Prime (p : ℤ) := Nat.prime_iff_prime_int.mp (Fact.out : N
 have hnotdiv1 : ¬ (p : ℤ) ∣ -1 := contra_via_unit_irreducible_neg_1 (p : ℤ) (hprime.irreducible)
 exact hnotdiv1 hdiv
 
+--Here is the first major result--a prime can be written as the sum of two squares iff it is 2
+--or 1 modulo 4
 theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
  (∃ a b : ℕ, p = a ^ 2 + b ^ 2) ↔ p = 2 ∨ p ≡ 1 [MOD 4] := by
+  --We break into proving each direction of the claim
   constructor
   · intro h
     rcases h with ⟨a,b,hab⟩
     have hpmod4 :
     p = 2 ∨ p ≡ 1 [MOD 4] ∨ p ≡ 3 [MOD 4] := odd_prime_1_or_3_mod_4 p
+    --Here we do case division on p = 2 ∨ p ≡ 1 [MOD 4] ∨ p ≡ 3 [MOD 4]
     cases hpmod4 with
     | inl h2 => left; exact h2
     | inr h1or3 =>
         cases h1or3 with
         | inl h1 => right; exact h1
         | inr h3 =>
+            --Here is the only mathematical depth in this direction: if p ≡ 3 [MOD 4],
+            --then p is not the sum of two squares. This is easy by our previous result
+            --that says sums of two squares are 0,1, or 2 modulo 4
             exfalso
             have hsum3 : 3 ≡ a^2 + b^2 [MOD 4] := by
               rw[hab] at h3
@@ -524,6 +584,16 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
                     apply myh
                     exact h3equiv2
   · intro h
+    --We must now show that if p=2 or p ≡ 1 [MOD 4], then p is the sum of two squares
+    -- The case p=2 is trivial. If p ≡ 1 [MOD 4], we know from earlier work that
+    -- p ∣ x^2 + 1. The key insight is that x^2+1 = (x+i)(x-i). We can show that
+    -- p as a Gaussian integer does not divide either factor, so p cannot be prime.
+    -- We use the fact that irreducible implies prime for UFD's to conclude that p
+    -- is not irreducible as a Gaussian integer, so there exist non-units a b such that
+    -- p = a * b. Thus p^2 = p.norm = (a*b).norm = a.norm * b.norm.
+    --We use the equivalence of being a unit with having norm 1 to see that neither a.norm
+    -- nor b.norm can be equal to 1. In particular, it follows that a.norm = p as desired by our
+    --equivalent classification of when integers can be written as the sum of two squares
     obtain h2 | h1mod4 := h
     · use 1, 1
       norm_num
@@ -635,6 +705,10 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
       apply convert_to_Nat_not_1 b.norm at hnormbne1
       have to_Z_square_back (n : ℕ) : ((n : ℤ)^2).toNat = n^2 := by
         exact Nat.add_zero (NatPow.pow n 2)
+      --appologies for naming conventions from this point forward in this proof--it was some time
+      -- between 3 and 6 a.m. after having spent the entire day working on this proof and I had
+      -- very little remaining brain function. However, now I think they're funny so I don't care
+      -- to update the names now
       have sumthin : (Zsqrtd.norm a * Zsqrtd.norm b).toNat = ((p: ℤ) ^ 2).toNat := by
         rw[habnorm]
       rw[to_Z_square_back p] at sumthin
@@ -651,36 +725,28 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
       symm
       exact idk.left
 
-
+--This function counts the total number of prime divisors of n congruent to 3 mod 4, counting
+--multiplicities. This is used to do induction later on
 def countPrimeFactorsMod4Eq3 (n : ℕ) : ℕ :=
   ∑ p ∈  ((Nat.factorization n).support).filter (fun p => p % 4 = 3),
     Nat.factorization n p
 
 
-
-lemma sum_split (α β : Type) [DecidableEq α] [AddCommMonoid β]
-(s : Finset α) (f : α → β) {p : α} (hp : p ∈ s) :
-        (∑ q ∈  s, f q) = f p + ∑ q ∈  s.erase p, f q := by
-      have hs : insert p (s.erase p) = s := by
-        simp only [Finset.insert_erase hp]
-      have hpnot : p ∉ s.erase p := by simp
-      calc
-        (∑ q ∈  s, f q)
-            = ∑ q ∈  insert p (s.erase p), f q := by simp only [hs]
-        _   = f p + ∑ q ∈  s.erase p, f q := by
-              simp only [hpnot, not_false_eq_true, Finset.sum_insert]
-
-
-
-
+--This is a key ingredient in the proof of the forward direction of the main theorem, allowing us to
+--do strong induction on countPrimeFactorsMod4Eq3, because we can divide n by p^2 if there is any
+--prime factor congruent to 3 modulo 4 dividing n, apply the inductive hypothesis to n/p^2, and
+--translate the conclusion back to n
 theorem sum_two_squares_descent
 (n p a b : ℕ) [Fact (Nat.Prime p)] (hdiv : p ∣ n) (hp : p ≡ 3 [MOD 4]) (hab : n = a ^ 2 + b ^ 2) :
 p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b := by
+  --First we translate the hypotheses to 𝔽_p where we can do algebra
   have hn0: n ≡ 0 [MOD p] := modEq_zero_iff_dvd.mpr hdiv
   rw [hab] at hn0
   have ha2b20modp: (a : ZMod p)^2 + (b : ZMod p)^2 = 0 := by
     rw[← ZMod.natCast_eq_natCast_iff (a^2+b^2) 0 p] at hn0
     simpa only [cast_add, cast_pow, cast_zero] using hn0
+  --Now that a^2+b^2 = 0 in 𝔽_p, we will do a case division on a = 0 in 𝔽_p, with the first case
+  --giving the conclusion easily, and the second resulting in a contradiction
   by_cases ha0 : (a : ZMod p) = 0
   · rw[ha0] at ha2b20modp
     simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add,
@@ -703,6 +769,9 @@ p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b := by
       · exact hpdiva
       · exact hpdivb
   · exfalso
+    --Essentially, the contradiction will arrive by multiplying by a^-2 and simplifying,
+    --to conclude that -1 is a square modulo p, but p ≡ 3 [MOD 4], which contradicts our
+    --previous results
     have haainv : (a : ZMod p) * ((a : ZMod p)⁻¹) = 1 := by
       simpa only using (mul_inv_cancel₀ (a := (a : ZMod p)) ha0)
     have hintroainv: ((a : ZMod p)⁻¹)^2 * ((a : ZMod p)^2 + (b : ZMod p)^2) = 0 := by
@@ -738,7 +807,8 @@ p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b := by
     tauto
 
 
-
+--This lemma just tells us what the prime factorization of n is in terms of the prime factorization
+-- of n/p^2
 lemma factorization_after_div_by_p2
 (n p m : ℕ) (hp : Nat.Prime p) (hnpm : n = p ^ 2 * m) (hnn0 : n ≠ 0) :
 (m.factorization p )+2= n.factorization p ∧ (∀ q ≠ p, m.factorization q = n.factorization q) := by
@@ -757,6 +827,8 @@ lemma factorization_after_div_by_p2
   have hrwat2 (q : ℕ) :
   (m.factorization + 2 • p.factorization) q = m.factorization q + 2 • p.factorization q :=
   Nat.add_zero ((m.factorization q).add ((2 • p.factorization) q))
+  --Now we break into the cases for our goal, computing the multiplicity of p as a prime factor and
+  --that of all other primes
   constructor
   · rw[← hfactorizationrw] at hrwat2
     rw[hrwat2]
@@ -781,340 +853,359 @@ lemma factorization_after_div_by_p2
 
 
 
-
+--The forward direction of our main theorem. We use this definition simply for
+--ease of notation
 def P (n : ℕ) : Prop :=
   (∃ a b : ℕ, n = a^2 + b^2) →
     ∀ p, Nat.Prime p →  (p ≡ 3 [MOD 4] → Even (n.factorization p))
+
+
+--Here we just prove that the sum of a function f over a Finset s is equal to the sum over s\p plus
+-- f p for any p in s. Only used in the below argument
+lemma sum_split (α β : Type) [DecidableEq α] [AddCommMonoid β]
+(s : Finset α) (f : α → β) {p : α} (hp : p ∈ s) :
+        (∑ q ∈  s, f q) = f p + ∑ q ∈  s.erase p, f q := by
+      have hs : insert p (s.erase p) = s := by
+        simp only [Finset.insert_erase hp]
+      have hpnot : p ∉ s.erase p := by simp
+      calc
+        (∑ q ∈  s, f q)
+            = ∑ q ∈  insert p (s.erase p), f q := by simp only [hs]
+        _   = f p + ∑ q ∈  s.erase p, f q := by
+              simp only [hpnot, not_false_eq_true, Finset.sum_insert]
+
 
 theorem Pn_for_all_n :
     ∀ n, P n := by
   have H : ∀ k, ∀ n, countPrimeFactorsMod4Eq3 n = k → P n := by
     intro k
+    --By having k in the definition of H, it allows us to do strong induction on this variable,
+    --even though k is always just countPrimeFactorsMod4Eq3 n by assumption. The strong induction is
+    --necessary, because our descent argument will reduce the countPrimeFactors... n by 2, so a
+    --direct induction argument will not work.
     induction k using Nat.strong_induction_on with
     | _ k IH =>
       intro n hk
-      induction k with
-      | zero =>
-        rw[countPrimeFactorsMod4Eq3] at hk
-        have hrefine: ∀ p ∈  n.factorization.support.filter (fun q => q % 4 = 3),
-         n.factorization p = 0 := by
-          intro q hq_support
-          have hq_mem :
-              q ∈ n.factorization.support.filter (fun p => p % 4 = 3) := by
-            exact Finset.mem_def.mpr hq_support
-          have hall :
-              ∀ r ∈ n.factorization.support.filter (fun p => p % 4 = 3),
-                n.factorization r = 0 := by
-            simpa using (Finset.sum_eq_zero_iff.mp hk)
-          exact hall q hq_mem
-        rw[P]
-        intro hab p hp hpmod4
-        by_cases hfactor : n.factorization p = 0
-        · rw[hfactor]
-          exact even_iff.mpr rfl
-        · exfalso
-          have hpinfactors : p ∈ n.factorization.support := by
-            by_contra c
-            have : n.factorization p = 0 := Finsupp.notMem_support_iff.mp c
-            rw[this] at hfactor
-            tauto
-          have : p%4 = 3 := by
-            exact
-              Eq.symm
-                (Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd (id (ModEq.symm hpmod4))) n))
-          apply hfactor
-          apply hrefine
-          exact Finset.mem_filter.mpr ⟨hpinfactors, this⟩
-      | succ k ih =>
-        rw[countPrimeFactorsMod4Eq3] at hk
-        rw[P]
-        intro hab p hp hpmod4
-        by_cases hfactor : n.factorization p = 0
-        · rw[hfactor]
-          exact even_iff.mpr rfl
-        · have hpinfactors : p ∈ n.primeFactors := by
-            by_contra c
-            have : n.factorization p = 0 := Finsupp.notMem_support_iff.mp c
-            rw[this] at hfactor
-            tauto
-          have hpmod4': p%4 = 3 := by
-            exact
-              Eq.symm
-                (Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd (id (ModEq.symm hpmod4))) n))
-          have hpprime : Nat.Prime p := (irreducible_iff_nat_prime p).mp hp
-          have hpprime' : Fact (Nat.Prime p) := ⟨hpprime⟩
-          have hpdivn : p ∣ n := dvd_of_mem_primeFactors hpinfactors
-          rcases hab with ⟨a,b,hab⟩
-          have hdesc : p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b :=
-           sum_two_squares_descent n p a b hpdivn hpmod4 hab
-          rcases hdesc.1 with ⟨m, hm⟩
-          by_cases hnn0 : n = 0
-          · rw[hnn0]
-            rw[ Nat.factorization_zero]
-            simp only [Finsupp.coe_zero, Pi.zero_apply, Even.zero]
-          · have hnfactortomfactor: n.factorization p = (m.factorization p) + 2 := by
+      rw[countPrimeFactorsMod4Eq3] at hk
+      rw[P]
+      intro hab p hp hpmod4
+      --We need to do a case division on whether n.factorization p = 0, i.e., p actually divides n,
+      -- because our descent step requires the assumption p ∣ n. Fortunately for us, the case
+      --n.factorization p = 0 is as easy as it gets
+      by_cases hfactor : n.factorization p = 0
+      · rw[hfactor]
+        exact even_iff.mpr rfl
+      · have hpinfactors : p ∈ n.primeFactors := by
+          by_contra c
+          have : n.factorization p = 0 := Finsupp.notMem_support_iff.mp c
+          rw[this] at hfactor
+          tauto
+        have hpmod4' : p%4 = 3 := by
+          exact
+            Eq.symm
+              (Nat.add_right_cancel
+                (congrFun (congrArg HAdd.hAdd (id (ModEq.symm hpmod4))) n))
+        have hpprime : Nat.Prime p := (irreducible_iff_nat_prime p).mp hp
+        have hpprime' : Fact (Nat.Prime p) := ⟨hpprime⟩
+        have hpdivn : p ∣ n := dvd_of_mem_primeFactors hpinfactors
+        rcases hab with ⟨a,b,hab⟩
+        --Here we apply the descent argument
+        have hdesc : p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b :=
+          sum_two_squares_descent n p a b hpdivn hpmod4 hab
+        rcases hdesc.1 with ⟨m, hm⟩
+        --Here we must do a case division on n=0, since n=0 makes n.factorization behave strangely.
+        --Luckily n=0 makes n.factorzation = 0, so our claims are easy
+        by_cases hnn0 : n = 0
+        · rw[hnn0]
+          rw[Nat.factorization_zero]
+          simp only [Finsupp.coe_zero, Pi.zero_apply, Even.zero]
+        · have hnfactortomfactor : n.factorization p = (m.factorization p) + 2 := by
+            symm
+            exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).1
+          rw[hnfactortomfactor]
+          have heveniffevenplus2 (n : ℕ) : Even n ↔ Even (n+2) := by
+            constructor
+            · intro h
+              have h1 : n % 2 = 0 := even_iff.mp h
+              have h2 : (n+2)%2 = (n%2 + 2%2) % 2 := add_mod n 2 2
+              refine even_iff.mpr ?_
+              rw[h2]
+              rw[h1]
+            · intro h
+              have h1 : (n+2) % 2 = 0 := even_iff.mp h
+              have h2 : (n+2)%2 = (n%2 + 2%2) % 2 := add_mod n 2 2
+              refine even_iff.mpr ?_
+              rw[h1] at h2
+              simp only [mod_self, add_zero, dvd_refl, mod_mod_of_dvd] at h2
               symm
-              exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).1
-            rw[hnfactortomfactor]
-            have heveniffevenplus2 (n : ℕ) : Even n ↔ Even (n+2) := by
-              constructor
-              · intro h
-                have h1 : n % 2 = 0 := even_iff.mp h
-                have h2 : (n+2)%2 = (n%2 + 2%2) % 2 := add_mod n 2 2
-                refine even_iff.mpr ?_
-                rw[h2]
-                rw[h1]
-              · intro h
-                have h1 : (n+2) % 2 = 0 := even_iff.mp h
-                have h2 : (n+2)%2 = (n%2 + 2%2) % 2 := add_mod n 2 2
-                refine even_iff.mpr ?_
-                rw[h1] at h2
-                simp only [mod_self, add_zero, dvd_refl, mod_mod_of_dvd] at h2
-                symm
-                exact h2
-            rw[← heveniffevenplus2]
-            have : (countPrimeFactorsMod4Eq3 m) + 2 = countPrimeFactorsMod4Eq3 n := by
-              repeat rw[countPrimeFactorsMod4Eq3]
-              have hpS : p ∈ n.primeFactors.filter (fun q => q % 4 = 3) := by
+              exact h2
+          rw[← heveniffevenplus2]
+          --It is good to remember that our goal is
+          -- (countPrimeFactorsMod4Eq3 m) + 2 = countPrimeFactorsMod4Eq3 n,
+          --since I would often forget what I was trying to prove in this section.
+          --Once we prove this, then we will be able to show that
+          -- countPrimeFactorsMod4Eq3 m < countPrimeFactorsMod4Eq3 n, so the
+          -- inductive hypothesis will apply to m, and life will be good
+          have : (countPrimeFactorsMod4Eq3 m) + 2 = countPrimeFactorsMod4Eq3 n := by
+            repeat rw[countPrimeFactorsMod4Eq3]
+            have hpS : p ∈ n.primeFactors.filter (fun q => q % 4 = 3) := by
+              apply Finset.mem_filter.2
+              refine ⟨hpinfactors, ?_⟩
+              exact hpmod4'
+            have hsplit :
+                (∑ q ∈ n.primeFactors.filter (fun q => q % 4 = 3), n.factorization q)
+                  =
+                n.factorization p
+                  + ∑ q ∈ (n.primeFactors.filter (fun q => q % 4 = 3)).erase p,
+                      n.factorization q := by
+              simpa using
+                (sum_split ℕ ℕ
+                  (s := n.primeFactors.filter (fun q => q % 4 = 3))
+                  (f := fun q => n.factorization q)
+                  (p := p)
+                  hpS)
+            have hrewritetrick (x : ℕ) : x.factorization.support = x.primeFactors :=
+              Nat.support_factorization x
+            rw[hrewritetrick m, hrewritetrick n]
+            rw[hsplit]
+            --Unfortunately, we must break into cases as to whether p ∣ m because
+            -- it changes whether m.primeFactors.erase p makes sense. The good news
+            --is that the proof is highly similar in both cases
+            by_cases hpinfactors' : p ∈ m.primeFactors
+            · have hpS' : p ∈ m.primeFactors.filter (fun q => q % 4 = 3) := by
                 apply Finset.mem_filter.2
-                refine ⟨hpinfactors, ?_⟩
+                refine ⟨hpinfactors', ?_⟩
                 exact hpmod4'
-              have hsplit :
-              (∑ q ∈ n.primeFactors.filter (fun q => q % 4 = 3), n.factorization q)
-                =
-              n.factorization p
-                + ∑ q ∈ (n.primeFactors.filter (fun q => q % 4 = 3)).erase p,
-                 n.factorization q := by
+              have hsplit' :
+                  (∑ q ∈ m.primeFactors.filter (fun q => q % 4 = 3), m.factorization q)
+                    =
+                  m.factorization p
+                    + ∑ q ∈ (m.primeFactors.filter (fun q => q % 4 = 3)).erase p,
+                        m.factorization q := by
                 simpa using
                   (sum_split ℕ ℕ
-                    (s := n.primeFactors.filter (fun q => q % 4 = 3))
-                    (f := fun q => n.factorization q)
+                    (s := m.primeFactors.filter (fun q => q % 4 = 3))
+                    (f := fun q => m.factorization q)
                     (p := p)
-                    hpS)
-              have hrewritetrick (x : ℕ ): x.factorization.support = x.primeFactors :=
-                Nat.support_factorization x
-              rw[hrewritetrick m, hrewritetrick n]
-              rw[hsplit]
-              by_cases hpinfactors' : p ∈ m.primeFactors
-              · have hpS' : p ∈ m.primeFactors.filter (fun q => q % 4 = 3) := by
-                  apply Finset.mem_filter.2
-                  refine ⟨hpinfactors', ?_⟩
-                  exact hpmod4'
-                have hsplit' :
-                (∑ q ∈ m.primeFactors.filter (fun q => q % 4 = 3), m.factorization q)
-                  =
-                m.factorization p
-                  + ∑ q ∈ (m.primeFactors.filter (fun q => q % 4 = 3)).erase p,
-                   m.factorization q := by
-                  simpa using
-                    (sum_split ℕ ℕ
-                      (s := m.primeFactors.filter (fun q => q % 4 = 3))
-                      (f := fun q => m.factorization q)
-                      (p := p)
-                      hpS')
-                rw[hsplit']
+                    hpS')
+              rw[hsplit']
+              rw[hnfactortomfactor]
+              nth_rewrite 4 [add_comm]
+              nth_rewrite 2 [add_assoc]
+              nth_rewrite 3 [add_comm]
+              simp only [Nat.add_right_cancel_iff, Nat.add_left_cancel_iff]
+              --This result allows us to prove that the index sets are the same
+              --and that the functions m.factorization and n.factorization agree
+              --pointwise on the index sets.
+              --The first goal is showing the sets are the same.
+              --The second goal is showing that the functions agree pointwise
+              --on the index set
+              refine Finset.sum_congr ?_ ?_
+              · rw[hm]
+                apply Finset.ext
+                intro q
+                have hp2mne0 : p^2 * m ≠ 0 := by
+                  rw[← hm]
+                  exact hnn0
+                constructor
+                · intro hq
+                  have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                  have hq_memF :
+                      q ∈ m.primeFactors.filter (fun r => r % 4 = 3) :=
+                    Finset.mem_of_mem_erase hq
+                  have hq_mem : q ∈ m.primeFactors :=
+                    (Finset.mem_filter.mp hq_memF).1
+                  have hq_mod : q % 4 = 3 :=
+                    (Finset.mem_filter.mp hq_memF).2
+                  have hq_mem' : q ∈ (p^2 * m).primeFactors := by
+                    refine mem_primeFactors.mpr ?_
+                    constructor
+                    · exact prime_of_mem_primeFactors hq_mem
+                    · constructor
+                      · have : q ∣ m := dvd_of_mem_primeFactors hq_mem
+                        exact Nat.dvd_mul_left_of_dvd this (p ^ 2)
+                      · exact hp2mne0
+                  apply Finset.mem_erase.mpr
+                  constructor
+                  · exact hq_ne
+                  · apply Finset.mem_filter.mpr
+                    constructor
+                    · assumption
+                    · assumption
+                · intro hq
+                  have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                  have hq_memF :
+                      q ∈ (p^2 * m).primeFactors.filter (fun r => r % 4 = 3) :=
+                    Finset.mem_of_mem_erase hq
+                  have hq_mem : q ∈ (p^2 * m).primeFactors :=
+                    (Finset.mem_filter.mp hq_memF).1
+                  have hq_mod : q % 4 = 3 :=
+                    (Finset.mem_filter.mp hq_memF).2
+                  have h1 : q ∣ p^2 * m := dvd_of_mem_primeFactors hq_mem
+                  have hqprime : Nat.Prime q := prime_of_mem_primeFactors hq_mem
+                  have hq_mem' : q ∈ m.primeFactors := by
+                    refine mem_primeFactors.mpr ?_
+                    constructor
+                    · exact prime_of_mem_primeFactors hq_mem
+                    · constructor
+                      · have : q ∣ m := by
+                          have h2 : q ∣ p^2 ∨ q ∣ m := by
+                            rw[← Nat.Prime.dvd_mul]
+                            · exact h1
+                            · exact hqprime
+                          cases h2 with
+                          | inl h =>
+                            exfalso
+                            have : q ∣ p := Nat.Prime.dvd_of_dvd_pow hqprime h
+                            have : q = p := (Nat.prime_dvd_prime_iff_eq hqprime hp).mp this
+                            rw[this] at hq_ne
+                            tauto
+                          | inr h =>
+                            exact h
+                        exact this
+                      · by_contra c
+                        rw[c] at hp2mne0
+                        simp only [mul_zero, ne_eq, not_true_eq_false] at hp2mne0
+                  apply Finset.mem_erase.mpr
+                  constructor
+                  · exact hq_ne
+                  · apply Finset.mem_filter.mpr
+                    constructor
+                    · assumption
+                    · assumption
+              · --Here we show the functions m.factorization and n.factorization both agree
+                --pointwise on the index set
+                intro q hq
+                have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).2 q hq_ne
+            · --Now we get the assumption instead that p does not divide m. This only changes
+              --the proof slightly
+              have h1 : m.factorization p = 0 := Finsupp.notMem_support_iff.mp hpinfactors'
+              have h2 : n.factorization p = 2 := by
                 rw[hnfactortomfactor]
-                nth_rewrite 4 [add_comm]
-                nth_rewrite 2 [add_assoc]
-                nth_rewrite 3 [add_comm]
-                simp only [Nat.add_right_cancel_iff, Nat.add_left_cancel_iff]
-                refine Finset.sum_congr ?_ ?_
-                · rw[hm]
-                  apply Finset.ext
-                  intro q
-                  have hp2mne0: p^2 * m ≠ 0 := by
-                        rw[← hm]
-                        exact hnn0
+                rw[h1]
+              rw[h2]
+              rw[add_comm]
+              simp only [Nat.add_left_cancel_iff]
+              refine Finset.sum_congr ?_ ?_
+              · --The goal in this branch again is showing the two index sets agree
+                rw[hm]
+                apply Finset.ext
+                intro q
+                have hp2mne0 : p^2 * m ≠ 0 := by
+                  rw[← hm]
+                  exact hnn0
+                constructor
+                · intro hq
+                  have hq_ne : q ≠ p := by
+                    by_contra c
+                    have hyp1 : q ∈ m.primeFactors := Finset.mem_of_mem_filter q hq
+                    have hyp2 : m.factorization q ≠ 0 := Finsupp.mem_support_iff.mp hyp1
+                    rw[c, h1] at hyp2
+                    tauto
+                  have hq_mem : q ∈ m.primeFactors :=
+                    (Finset.mem_filter.mp hq).1
+                  have hq_mod : q % 4 = 3 :=
+                    (Finset.mem_filter.mp hq).2
+                  have hq_mem' : q ∈ (p^2 * m).primeFactors := by
+                    refine mem_primeFactors.mpr ?_
+                    constructor
+                    · exact prime_of_mem_primeFactors hq_mem
+                    · constructor
+                      · have : q ∣ m := dvd_of_mem_primeFactors hq_mem
+                        exact Nat.dvd_mul_left_of_dvd this (p ^ 2)
+                      · exact hp2mne0
+                  apply Finset.mem_erase.mpr
                   constructor
-                  · intro hq
-                    have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
-                    have hq_memF :
-                        q ∈ m.primeFactors.filter (fun r => r % 4 = 3) :=
-                      Finset.mem_of_mem_erase hq
-                    have hq_mem : q ∈ m.primeFactors :=
-                      (Finset.mem_filter.mp hq_memF).1
-                    have hq_mod : q % 4 = 3 :=
-                      (Finset.mem_filter.mp hq_memF).2
-                    have hq_mem' : q ∈ (p^2 * m).primeFactors := by
-                      refine mem_primeFactors.mpr ?_
-                      constructor
-                      · exact prime_of_mem_primeFactors hq_mem
-                      · constructor
-                        · have : q ∣ m := dvd_of_mem_primeFactors hq_mem
-                          exact Nat.dvd_mul_left_of_dvd this (p ^ 2)
-                        · exact hp2mne0
-                    apply Finset.mem_erase.mpr
-                    constructor
-                    · exact hq_ne
-                    · apply Finset.mem_filter.mpr
-                      constructor
-                      · assumption
-                      · assumption
-                  · intro hq
-                    have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
-                    have hq_memF :
-                        q ∈ (p^2 * m).primeFactors.filter (fun r => r % 4 = 3) :=
-                      Finset.mem_of_mem_erase hq
-                    have hq_mem : q ∈ (p^2 * m).primeFactors :=
-                      (Finset.mem_filter.mp hq_memF).1
-                    have hq_mod : q % 4 = 3 :=
-                      (Finset.mem_filter.mp hq_memF).2
-                    have hfac : m.factorization q = (p^2 * m).factorization q := by
-                      apply (factorization_after_div_by_p2 (p^2*m) p m hpprime rfl hp2mne0).2
-                      exact hq_ne
-                    have h1 : q ∣ p^2 * m := dvd_of_mem_primeFactors hq_mem
-                    have hqprime : Nat.Prime q := prime_of_mem_primeFactors hq_mem
-                    have hq_mem' : q ∈ m.primeFactors := by
-                      refine mem_primeFactors.mpr ?_
-                      constructor
-                      · exact prime_of_mem_primeFactors hq_mem
-                      · constructor
-                        · have : q ∣ m := by
-                            have h2 : q ∣ p^2 ∨ q ∣ m := by
-                              rw[← Nat.Prime.dvd_mul]
-                              · exact h1
-                              · exact hqprime
-                            cases h2 with
-                            | inl h =>
-                              exfalso
-                              have : q ∣ p := Nat.Prime.dvd_of_dvd_pow hqprime h
-                              have : q = p := (Nat.prime_dvd_prime_iff_eq hqprime hp).mp this
-                              rw[this] at hq_ne
-                              tauto
-                            | inr h =>
-                              exact h
-                          exact this
-                        · by_contra c
-                          rw[c] at hp2mne0
-                          simp only [mul_zero, ne_eq, not_true_eq_false] at hp2mne0
-                    apply Finset.mem_erase.mpr
-                    constructor
-                    · exact hq_ne
-                    · apply Finset.mem_filter.mpr
-                      constructor
-                      · assumption
-                      · assumption
-                · intro q hq
-                  have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
-                  exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).2 q hq_ne
-              · have h1 : m.factorization p = 0 := Finsupp.notMem_support_iff.mp hpinfactors'
-                have h2 : n.factorization p = 2 := by
-                  rw[hnfactortomfactor]
-                  rw[h1]
-                rw[h2]
-                rw[add_comm]
-                simp only [Nat.add_left_cancel_iff]
-                refine Finset.sum_congr ?_ ?_
-                · rw[hm]
-                  apply Finset.ext
-                  intro q
-                  have hp2mne0: p^2 * m ≠ 0 := by
-                        rw[← hm]
-                        exact hnn0
-                  constructor
-                  · intro hq
-                    have hq_ne : q ≠ p := by
-                      by_contra c
-                      have hyp1 : q ∈ m.primeFactors := Finset.mem_of_mem_filter q hq
-                      have hyp2 : m.factorization q ≠ 0 := Finsupp.mem_support_iff.mp hyp1
-                      rw[c, h1] at hyp2
-                      tauto
-                    have hq_mem : q ∈ m.primeFactors :=
-                      (Finset.mem_filter.mp hq).1
-                    have hq_mod : q % 4 = 3 :=
-                      (Finset.mem_filter.mp hq).2
-                    have hq_mem' : q ∈ (p^2 * m).primeFactors := by
-                      refine mem_primeFactors.mpr ?_
-                      constructor
-                      · exact prime_of_mem_primeFactors hq_mem
-                      · constructor
-                        · have : q ∣ m := dvd_of_mem_primeFactors hq_mem
-                          exact Nat.dvd_mul_left_of_dvd this (p ^ 2)
-                        · exact hp2mne0
-                    apply Finset.mem_erase.mpr
-                    constructor
-                    · exact hq_ne
-                    · apply Finset.mem_filter.mpr
-                      constructor
-                      · assumption
-                      · assumption
-                  · intro hq
-                    have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
-                    have hq_memF :
-                        q ∈ (p^2 * m).primeFactors.filter (fun r => r % 4 = 3) :=
-                      Finset.mem_of_mem_erase hq
-                    have hq_mem : q ∈ (p^2 * m).primeFactors :=
-                      (Finset.mem_filter.mp hq_memF).1
-                    have hq_mod : q % 4 = 3 :=
-                      (Finset.mem_filter.mp hq_memF).2
-                    have hfac : m.factorization q = (p^2 * m).factorization q := by
-                      apply (factorization_after_div_by_p2 (p^2*m) p m hpprime rfl hp2mne0).2
-                      exact hq_ne
-                    have h1 : q ∣ p^2 * m := dvd_of_mem_primeFactors hq_mem
-                    have hqprime : Nat.Prime q := prime_of_mem_primeFactors hq_mem
-                    have hq_mem' : q ∈ m.primeFactors := by
-                      refine mem_primeFactors.mpr ?_
-                      constructor
-                      · exact prime_of_mem_primeFactors hq_mem
-                      · constructor
-                        · have : q ∣ m := by
-                            have h2 : q ∣ p^2 ∨ q ∣ m := by
-                              rw[← Nat.Prime.dvd_mul]
-                              · exact h1
-                              · exact hqprime
-                            cases h2 with
-                            | inl h =>
-                              exfalso
-                              have : q ∣ p := Nat.Prime.dvd_of_dvd_pow hqprime h
-                              have : q = p := (Nat.prime_dvd_prime_iff_eq hqprime hp).mp this
-                              rw[this] at hq_ne
-                              tauto
-                            | inr h =>
-                              exact h
-                          exact this
-                        · by_contra c
-                          rw[c] at hp2mne0
-                          simp only [mul_zero, ne_eq, not_true_eq_false] at hp2mne0
-                    apply Finset.mem_filter.mpr
+                  · exact hq_ne
+                  · apply Finset.mem_filter.mpr
                     constructor
                     · assumption
                     · assumption
-                · intro q hq
+                · intro hq
                   have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
-                  exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).2 q hq_ne
-            have h' : P m := by
-              apply IH (countPrimeFactorsMod4Eq3 m)
-              · rw[← countPrimeFactorsMod4Eq3] at hk
-                rw[← hk]
-                rw[← this]
-                simp only [lt_add_iff_pos_right, ofNat_pos]
-              · rfl
-            apply h'
-            · rcases hdesc.2.1 with ⟨c, hc⟩
-              rcases hdesc.2.2 with ⟨d, hd⟩
-              use c, d
-              rw[hm, hc, hd] at hab
-              have h1 : (p * c) ^2 = p^2 * c^2 := Nat.mul_pow p c 2
-              have h2 : (p * d) ^2 = p^2 * d^2 := Nat.mul_pow p d 2
-              rw[h1, h2] at hab
-              have h3 : p^2 * c^2 + p^2 * d^2 = p^2* (c^2 + d^2) :=
-                Eq.symm (Nat.mul_add (p ^ 2) (c ^ 2) (d ^ 2))
-              rw[h3] at hab
-              simp only [mul_eq_mul_left_iff, Nat.pow_eq_zero, ne_eq, OfNat.ofNat_ne_zero,
-                not_false_eq_true, and_true] at hab
-              cases hab with
-              | inl h => exact h
-              | inr h =>
-                exfalso
-                rw[h] at hpmod4
-                cases hpmod4
-            · exact hp
-            · exact modEq_modulus_add_iff.mp hpmod4
+                  have hq_memF :
+                      q ∈ (p^2 * m).primeFactors.filter (fun r => r % 4 = 3) :=
+                    Finset.mem_of_mem_erase hq
+                  have hq_mem : q ∈ (p^2 * m).primeFactors :=
+                    (Finset.mem_filter.mp hq_memF).1
+                  have hq_mod : q % 4 = 3 :=
+                    (Finset.mem_filter.mp hq_memF).2
+                  have h1 : q ∣ p^2 * m := dvd_of_mem_primeFactors hq_mem
+                  have hqprime : Nat.Prime q := prime_of_mem_primeFactors hq_mem
+                  have hq_mem' : q ∈ m.primeFactors := by
+                    refine mem_primeFactors.mpr ?_
+                    constructor
+                    · exact prime_of_mem_primeFactors hq_mem
+                    · constructor
+                      · have : q ∣ m := by
+                          have h2 : q ∣ p^2 ∨ q ∣ m := by
+                            rw[← Nat.Prime.dvd_mul]
+                            · exact h1
+                            · exact hqprime
+                          cases h2 with
+                          | inl h =>
+                            exfalso
+                            have : q ∣ p := Nat.Prime.dvd_of_dvd_pow hqprime h
+                            have : q = p := (Nat.prime_dvd_prime_iff_eq hqprime hp).mp this
+                            rw[this] at hq_ne
+                            tauto
+                          | inr h =>
+                            exact h
+                        exact this
+                      · by_contra c
+                        rw[c] at hp2mne0
+                        simp only [mul_zero, ne_eq, not_true_eq_false] at hp2mne0
+                  apply Finset.mem_filter.mpr
+                  constructor
+                  · assumption
+                  · assumption
+              · --Now we are showing just that m.factorization = n.factorization on the index sets
+                intro q hq
+                have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).2 q hq_ne
+          --Now the heavylifting is over, we will just apply the induction hypothesis to m shortly
+          have h' : P m := by
+            --applying the induction hypothesis forces us to prove that each of its
+             --hypotheses are met which is not too hard. The only one with some difficulty
+             --is the first, that m is the sum of two squres, but we just use our conclusions
+             --from the descent argument to get the needed values.
+            apply IH (countPrimeFactorsMod4Eq3 m)
+            · rw[← countPrimeFactorsMod4Eq3] at hk
+              rw[← hk]
+              rw[← this]
+              simp only [lt_add_iff_pos_right, ofNat_pos]
+            · rfl
+          --In applying P m, it remains just to show the hypotheses of P m are met
+          apply h'
+          · rcases hdesc.2.1 with ⟨c, hc⟩
+            rcases hdesc.2.2 with ⟨d, hd⟩
+            use c, d
+            rw[hm, hc, hd] at hab
+            have h1 : (p * c) ^2 = p^2 * c^2 := Nat.mul_pow p c 2
+            have h2 : (p * d) ^2 = p^2 * d^2 := Nat.mul_pow p d 2
+            rw[h1, h2] at hab
+            have h3 : p^2 * c^2 + p^2 * d^2 = p^2 * (c^2 + d^2) :=
+              Eq.symm (Nat.mul_add (p ^ 2) (c ^ 2) (d ^ 2))
+            rw[h3] at hab
+            simp only [mul_eq_mul_left_iff, Nat.pow_eq_zero, ne_eq, OfNat.ofNat_ne_zero,
+              not_false_eq_true, and_true] at hab
+            cases hab with
+            | inl h => exact h
+            | inr h =>
+              exfalso
+              rw[h] at hpmod4
+              cases hpmod4
+          · exact hp
+          · exact modEq_modulus_add_iff.mp hpmod4
   intro n
   specialize H (countPrimeFactorsMod4Eq3 n) n
   apply H
   rfl
 
+
+--These lemmas will just be used to define a choice function, selecting a witness for
+--each such prime
 lemma primes1or2mod4norm (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p = 2 ∨ p ≡ 1 [MOD 4])
 : ∃ z : GaussianInt, p = (z.norm).toNat := by
       rw[← sum_two_nat_squares_iff_gaussian_norm, prime_sum_two_squares]
@@ -1155,6 +1246,9 @@ lemma prime_not_3_mod_4_iff_2_or_1_mod_4 (p : ℕ) [Fact (Nat.Prime p)] :
 
 
 --This function's syntax and subsequent lemmas were defined with the help of AI
+--This function selects a witness in the Gaussian integers to z.norm = p if p = 2 or
+-- p ≡ 1 [MOD 4], selects a witness to z.norm = p^2 for all other primes, and sends
+--nonprimes to 0
 noncomputable def NtoGaussian (n : ℕ) : GaussianInt := by
   classical
   by_cases hn : Nat.Prime n
@@ -1164,6 +1258,7 @@ noncomputable def NtoGaussian (n : ℕ) : GaussianInt := by
     · exact Classical.choose (allnatnorm (p := n))
   · exact 0
 
+--This lemma just proves the defining property of our choice of witness
 lemma NtoGaussian_spec_good (n : ℕ) (hn : Nat.Prime n)
     (hgood : n = 2 ∨ n ≡ 1 [MOD 4]) :
     n = ((NtoGaussian n).norm).toNat := by
@@ -1174,6 +1269,7 @@ lemma NtoGaussian_spec_good (n : ℕ) (hn : Nat.Prime n)
 
 
 
+--This lemma just proves the defining property of our choice of witness
 lemma NtoGaussian_spec_bad (n : ℕ) (hn : Nat.Prime n)
     (hbad : ¬( n = 2 ∨  n ≡ 1 [MOD 4])) :
     n^2 = ((NtoGaussian n).norm).toNat := by
@@ -1182,7 +1278,8 @@ lemma NtoGaussian_spec_bad (n : ℕ) (hn : Nat.Prime n)
   simpa [NtoGaussian, hn, hbad] using
     (Classical.choose_spec (allnatnorm (p := n)))
 
-
+--This lemma is needed for a simplification in the backwards direction of
+--the theorem
 lemma gaussian_norm_pow (x : GaussianInt) (k : ℕ) :
     Zsqrtd.norm (x ^ k) = (Zsqrtd.norm x) ^ k := by
   induction k with
@@ -1197,7 +1294,8 @@ theorem sum_two_squares_iff (n : ℕ) :
   (∃ a b : ℕ, n = a^2 + b^2) ↔
   (∀ p ∈ n.primeFactors, (p ≡ 3 [MOD 4] → Even (n.factorization p))) := by
   constructor
-  · have : P n := by
+  · --The forward direction in just housekeeping due to our previous theorem Pn_for_all_n
+    have : P n := by
       apply Pn_for_all_n
     rw[P] at this
     intro h1
@@ -1207,17 +1305,28 @@ theorem sum_two_squares_iff (n : ℕ) :
     · exact prime_of_mem_primeFactors hp
     · exact hpmod4
   · intro hevenfactors
+    --Again we must do case division on n=0 because some results need nonzero assumptions
     by_cases hn : n = 0
     · use 0, 0
       simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, add_zero]
       exact hn
     · rw[sum_two_nat_squares_iff_gaussian_norm]
+      --We have now translated the goal into a question about norms of Gaussian integers.
+      --The idea is simple now: if p is 3 mod 4, since (NToGaussian p).norm = p^2, but
+      -- p divides n with even multiplicity, then p^2 divides n with some multiplicity r.
+      --We just take the product of all such (NToGaussian p)^r.
+      -- If p is not 3 mod 4, then we know (NToGaussian p).norm = p, so if p divides n with
+      -- multiplicity r, we just take this (NToGaussian p)^r and again take the product over
+      -- all such p. The function g below formalizes this idea, so we can set
+      -- z = ∏ p ∈ n.primeFactors, g p
       let g : ℕ → GaussianInt := fun p =>
         if ¬ (p = 2 ∨ p ≡ 1 [MOD 4]) then
           (NtoGaussian p) ^ (n.factorization p / 2)
         else
           (NtoGaussian p) ^ (n.factorization p)
       --The proof of hnorm_prod was written with the help of AI
+      -- We just want to distribute the norm over the product using the
+      -- fact that the norm distributes over binary products
       have hnorm_prod (t : Finset ℕ) :
         Zsqrtd.norm (∏ p ∈ t, g p) = ∏ p ∈ t, Zsqrtd.norm (g p) := by
         classical
@@ -1228,7 +1337,10 @@ theorem sum_two_squares_iff (n : ℕ) :
       let z : GaussianInt :=
         ∏ p ∈  n.primeFactors, g p
       use z
+      --Due to our earlier lemma gaussian_norms_are_nat, the proposition
+      --hnZ (equality of integers) is equivalent to our goal (equality of natural numbers)
       have hnZ : (n : ℤ) = z.norm := by
+        --Here we prove the fact that n = ∏ p_i ^ e_i, its prime factorization
         have hn_fac' : (∏ p ∈ n.primeFactors, p ^ (n.factorization p)) = n := by
           simpa [Finsupp.prod] using
             (Nat.factorization_prod_pow_eq_self (n := n) hn)
@@ -1237,7 +1349,10 @@ theorem sum_two_squares_iff (n : ℕ) :
               (∏ p ∈ n.primeFactors, (p : ℤ) ^ (n.factorization p)) := by
           have := congrArg (fun t : ℕ => (t : ℤ)) hn_fac'.symm
           simpa using this
+        --Now we use hn_facZ and the transitivity of = to rewrite or goal
         refine hn_facZ.trans ?_
+        --Next, we compute the norm of z using the fact that norms distribute over products
+        --and z was defined by a product
         have hz_norm :
         z.norm = ∏ p ∈ n.primeFactors, (g p).norm := by
           simpa [z] using (hnorm_prod (t := n.primeFactors))
@@ -1255,9 +1370,14 @@ theorem sum_two_squares_iff (n : ℕ) :
           · simp only [g, hgood]
             simp only [Int.reduceNeg, not_false_eq_true, ↓reduceIte]
             rw[gaussian_norm_pow]
+        --We use this theorem to reduce our goal to that of showing
+        --p ^ n.factorization p = Zsqrtd.norm (g p) for each prime factor p
         refine (Finset.prod_congr rfl ?_)
         intro p hp
         rw[hg_norm]
+        --We must break into cases based on if p is 3 mod 4 or not, because
+        --since p is prime, this is the only condition in which the definition
+        -- of NtoGaussian depends
         by_cases hgood : (p = 2 ∨ p ≡ 1 [MOD 4])
         · have hpPrime : Nat.Prime p := (Nat.mem_primeFactors.mp hp).1
           haveI : Fact (Nat.Prime p) := ⟨hpPrime⟩
@@ -1291,12 +1411,16 @@ theorem sum_two_squares_iff (n : ℕ) :
               (gaussian_norms_are_nat (NtoGaussian p) (Zsqrtd.norm (NtoGaussian p)).toNat).mpr rfl
             rw[this] at hNat
             exact hNat
+          --Convert not 2 or congruent to 1 mod 4 to congruent to 3 mod 4
           have hpmod3 : p ≡ 3 [MOD 4] := by
             by_contra c
             rw[prime_not_3_mod_4_iff_2_or_1_mod_4] at c
             apply hgood
             exact c
+          -- use this conversion to get an even condition on the multiplicity
           have heven : Even (n.factorization p) := hevenfactors p hp hpmod3
+          -- Use the even condition to obtain that 2 divides n.factorization,
+          -- hence 2*(n.factorization p / 2) = n.factorization p
           have hdiv2 : 2 ∣ n.factorization p :=
             even_iff_two_dvd.mp (hevenfactors p hp hpmod3)
           have hmul : 2 * (n.factorization p / 2) = n.factorization p :=
