@@ -368,6 +368,106 @@ theorem primes_w_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 1 [M
     norm_num
   exact lift_y2_plus_1 p y myh
 
+theorem primes_wo_neg1_square (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p ≡ 3 [MOD 4])
+  : ¬ IsSquare (-1 : ZMod p) := by
+  have hn1 : (-1 : ZMod p) ≠ (0 : ZMod p) := by
+    norm_num
+  have hprime2 : Nat.Prime 2 := by exact prime_two
+  have hpm2implpis2 (n : ℕ ): n ∣ 2 → n = 1 ∨ n = 2 := by
+    by_cases h : n = 1
+    · intro hyp
+      left
+      exact h
+    · intro hyp
+      right
+      symm
+      rw[← Nat.Prime.dvd_iff_eq hprime2 h]
+      exact hyp
+  have h2lep : 2 ≤ p := (Nat.Prime.two_le (by
+  exact (Fact.out : Nat.Prime p)))
+  have h2nep : p ≠ 2 := by
+    by_contra c
+    rw[c] at hpmod4
+    cases hpmod4
+  have h3lep : 3 ≤ p := by
+    cases p with
+    | zero =>
+        simp at h2lep
+    | succ p =>
+      cases p with
+      | zero =>
+        simp at h2lep
+      | succ p =>
+        have : (Nat.succ (Nat.succ p)) ≠ 2 := by
+          simpa using h2nep
+        cases p with
+        | zero =>
+            -- succ (succ 0) = 2, contradiction
+            cases this rfl
+        | succ p =>
+            -- succ (succ (succ p)) ≥ 3 is trivial
+            exact Nat.succ_le_succ (Nat.succ_le_succ (Nat.succ_le_succ (Nat.zero_le p)))
+  have eucl_alg : ∃ t : ℕ, p = 3 + 4*t := by
+    apply (Nat.modEq_iff_exists_eq_add h3lep).mp
+    apply Nat.ModEq.symm
+    exact hpmod4
+  rcases eucl_alg with ⟨t, ht⟩
+  have h1 : IsSquare (-1 : ZMod p) → (-1 : ZMod p)^(p/2) = 1 := by
+    exact (ZMod.euler_criterion p hn1).mp
+  by_contra c
+  apply h1 at c
+  have hpover2 : p/2 = 1 + 2*t := by
+    rw[ht]
+    refine Nat.div_eq_of_lt_le ?_ ?_
+    · have : (1+2*t)*2 = 2 + 4* t := by
+        rw[add_mul 1 (2*t) 2]
+        norm_num
+        rw[mul_comm, ← mul_assoc]
+        simp
+      rw[this]
+      have : 3 + 4*t = 1 + (2+4*t) := by
+        have : 3 = 1 + 2 := by norm_num
+        rw[this, add_assoc]
+      rw[this]
+      exact Nat.le_add_left (2 + 4 * t) 1
+    · have : 1 + 2*t + 1 = 2 +2* t := by
+        rw[add_comm, ← add_assoc]
+      rw[this]
+      have : (2+2*t)*2 = 2*2 + (2*t)*2 := Nat.add_mul 2 (2 * t) 2
+      simp only [reduceMul] at this
+      have hyp: 2*t*2 = 4*t := by
+        rw[mul_comm, ← mul_assoc]
+        simp only [reduceMul]
+      rw[hyp] at this
+      rw[this]
+      have : 4 = 1+3 := by norm_num
+      nth_rewrite 2[this]
+      rw[add_assoc]
+      exact lt_one_add (3 + 4 * t)
+  rw[hpover2] at c
+  have : (-1 : ZMod p)^(1 + 2 * t) = (-1 : ZMod p)^1 * (-1)^(2*t) := pow_add (-1) 1 (2 * t)
+  rw[this] at c
+  simp only [pow_one, even_two, Even.mul_right, Even.neg_pow, one_pow, mul_one] at c
+  have h2 : (2 : ZMod p) = 0 := by
+    have := congrArg (fun x : ZMod p => x + 1) c
+    simp only [neg_add_cancel] at this
+    symm
+    have h2isoneplusone : (1 : ZMod p)+1=2 := by norm_num
+    rw[h2isoneplusone] at this
+    exact this
+  have hpdiv2 : p ∣ 2 := by
+    apply (ZMod.natCast_eq_zero_iff 2 p).mp
+    exact h2
+  apply hpm2implpis2 at hpdiv2
+  cases hpdiv2 with
+  | inl h =>
+    rw[h] at hpmod4
+    cases hpmod4
+  | inr h =>
+    rw[h] at hpmod4
+    cases hpmod4
+
+
 
 
 theorem mod4_rw (n : ℕ) (hn : n ≡ 1 [MOD 4]) : n%4=1 := by
@@ -429,7 +529,7 @@ have hnotdiv1 : ¬ (p : ℤ) ∣ -1 := contra_via_unit_irreducible_neg_1 (p : �
 exact hnotdiv1 hdiv
 
 theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
- (∃ a b : ℕ, p = a^2 + b^2) ↔ p=2 ∨ p≡ 1 [MOD 4] := by
+ (∃ a b : ℕ, p = a ^ 2 + b ^ 2) ↔ p = 2 ∨ p ≡ 1 [MOD 4] := by
   constructor
   · intro h
     rcases h with ⟨a,b,hab⟩
@@ -824,28 +924,9 @@ theorem exists_b_sq_mul_squarefreePart (n : ℕ) :
   exact h.symm
 
 --Written with AI assistance
-theorem squarefree_squarefreePart (n : ℕ) : Squarefree (squarefreePart n) := by
-  rcases (Nat.sq_mul_squarefree n).choose_spec with ⟨b, hb⟩
-  exact hb.2
-
-/-
-Show two elements are associate iff they have equal norm.
-Then show that every Gaussian prime is associated
-to either 1+i, a+bi with a^2+b^2=p, p ≡ 1 [MOD 4], or p with p ≡ 3 [MOD 4].
-Show p ∣ z.norm ↔ ∃ a Gaussian prime q s.t. q ∣ ↑ p and q ∣ z.
-Use this to show that if p ∣ z.norm, then either p=2 or p≡ 1 [MOD 4] and some Gaussian prime
-dividing p divides z, or p ≡ 3 [MOD 4] and ↑p ∣ z.
-Now apply this to the inductive hypothesis in the final theorem to show that we may cancel
--/
-
-/-
-Step 1 : Show that 2 ∣ z.norm ↔ 1+i ∣ z
-Step 2 : Show that n = 2 * m, Odd m, ∃ a b, n = a^2 + b^2 ↔ ∃ c d, m = c^2 + d^2
-Step 3 : Show that n = 2^r * m, Odd m, ∃ a b, n = a^2 + b^2 ↔ ∃ c d, m = c^2 + d^2 by induction on r
-Step 4 : Show that n = a^2 + b^2 →  Even (countPrimeFactorsMod4Eq3 n).
-Step 5 : Show that
-
--/
+-- theorem squarefree_squarefreePart (n : ℕ) : Squarefree (squarefreePart n) := by
+--   rcases (Nat.sq_mul_squarefree n).choose_spec with ⟨b, hb⟩
+--   exact hb.2
 
 
 
@@ -1028,199 +1109,201 @@ theorem even_countPrimeFactorsMod4Eq3_of_modEq_one (m : ℕ)
 
 
 
-theorem two_div_znorm (z : GaussianInt) : 2 ∣ z.norm ↔ ((⟨1, 1⟩) : GaussianInt) ∣ z := by
-  sorry
+-- theorem two_div_znorm (z : GaussianInt) : 2 ∣ z.norm ↔ ((⟨1, 1⟩) : GaussianInt) ∣ z := by
+--   sorry
 
-theorem cancel_two_if_znorm (m : ℕ)
-  : (∃ x : GaussianInt, 2* m = x.norm) ↔ (∃ y : GaussianInt, m = y.norm) := by
-  constructor
-  · intro h
-    rcases h with ⟨x, hx⟩
-    have htwodiv : 2 ∣ x.norm := Dvd.intro (↑m) hx
-    apply (two_div_znorm x).mp at htwodiv
-    have hy : ∃ y : GaussianInt, x = ((⟨1, 1⟩) : GaussianInt) * y := by
-      rcases htwodiv with ⟨y, hy⟩
-      use y
-    rcases hy with ⟨y, h⟩
-    use y
-    rw[h] at hx
-    have norm_dist:
-    ((⟨1,1⟩ : GaussianInt) * y).norm = (⟨1,1⟩ : GaussianInt).norm * y.norm
-    := Zsqrtd.norm_mul { re := 1, im := 1 } y
-    rw[norm_dist] at hx
-    have hone_plus_i_norm : (⟨1,1⟩ : GaussianInt).norm = 2 := by exact Int.neg_inj.mp rfl
-    rw[hone_plus_i_norm] at hx
-    have h2not0 : (2: ℤ) ≠ 0 := by norm_num
-    have (n m : ℤ): 2*n = 2*m → n = m := by
-      intro h
-      apply mul_left_cancel₀ h2not0 h
-    apply this at hx
-    exact hx
-  · intro h
-    rcases h with ⟨y, hy⟩
-    rw[hy]
-    use (⟨1,1⟩: GaussianInt) * y
-    have norm_dist:
-    ((⟨1,1⟩ : GaussianInt) * y).norm = (⟨1,1⟩ : GaussianInt).norm * y.norm
-    := Zsqrtd.norm_mul { re := 1, im := 1 } y
-    rw[norm_dist]
-    have hone_plus_i_norm : (⟨1,1⟩ : GaussianInt).norm = 2 := by exact Int.neg_inj.mp rfl
-    rw[hone_plus_i_norm]
-
-
-
-theorem cancel_pow_two_if_znorm (m r : ℕ)
-  : (∃ x : GaussianInt, (2 : ℤ)^r * (m : ℤ) = x.norm ) ↔ (∃ y : GaussianInt, m = y.norm) := by
-    induction r with
-    | zero => simp
-    | succ r ih =>
-      have halg : (2 : ℤ) ^(r+1) * (↑ m) = 2* (2^r * ↑ m) := by ring_nf
-      constructor
-      · intro h
-        rcases h with ⟨x, hx⟩
-        rw[halg] at hx
-        have : ∃ y : GaussianInt, 2^r * (m : ℤ) = y.norm := by
-          apply (cancel_two_if_znorm (2^r * m)).mp
-          use x
-          exact hx
-        apply ih.mp
-        exact this
-      · intro h
-        rcases h with ⟨y, hy⟩
-        use (⟨1,1⟩ : GaussianInt)^(r+1) * y
-        have hone_plus_i_norm : (⟨1,1⟩ : GaussianInt).norm = 2 := by exact Int.neg_inj.mp rfl
-        have hpowers_comm_w_norm (n : ℕ) (z : GaussianInt): (z^n).norm = (z.norm)^n := by
-          induction n with
-          | zero => simp
-          | succ n ih =>
-            have dist_pow_GI: z^(n+1) = z * z^n := by ring
-            rw[dist_pow_GI, Zsqrtd.norm_mul z (z^n)]
-            rw[ih]
-            have dist_pow_Z (a : ℤ) (n : ℕ) : a * a^n = a^(n+1) := Eq.symm (Int.pow_succ' a n)
-            rw[dist_pow_Z (z.norm) n]
-        rw[Zsqrtd.norm_mul (({ re := 1, im := 1})^(r+1)) y,
-        hy, hpowers_comm_w_norm (r+1), hone_plus_i_norm]
+-- theorem cancel_two_if_znorm (m : ℕ)
+--   : (∃ x : GaussianInt, 2* m = x.norm) ↔ (∃ y : GaussianInt, m = y.norm) := by
+--   constructor
+--   · intro h
+--     rcases h with ⟨x, hx⟩
+--     have htwodiv : 2 ∣ x.norm := Dvd.intro (↑m) hx
+--     apply (two_div_znorm x).mp at htwodiv
+--     have hy : ∃ y : GaussianInt, x = ((⟨1, 1⟩) : GaussianInt) * y := by
+--       rcases htwodiv with ⟨y, hy⟩
+--       use y
+--     rcases hy with ⟨y, h⟩
+--     use y
+--     rw[h] at hx
+--     have norm_dist:
+--     ((⟨1,1⟩ : GaussianInt) * y).norm = (⟨1,1⟩ : GaussianInt).norm * y.norm
+--     := Zsqrtd.norm_mul { re := 1, im := 1 } y
+--     rw[norm_dist] at hx
+--     have hone_plus_i_norm : (⟨1,1⟩ : GaussianInt).norm = 2 := by exact Int.neg_inj.mp rfl
+--     rw[hone_plus_i_norm] at hx
+--     have h2not0 : (2: ℤ) ≠ 0 := by norm_num
+--     have (n m : ℤ): 2*n = 2*m → n = m := by
+--       intro h
+--       apply mul_left_cancel₀ h2not0 h
+--     apply this at hx
+--     exact hx
+--   · intro h
+--     rcases h with ⟨y, hy⟩
+--     rw[hy]
+--     use (⟨1,1⟩: GaussianInt) * y
+--     have norm_dist:
+--     ((⟨1,1⟩ : GaussianInt) * y).norm = (⟨1,1⟩ : GaussianInt).norm * y.norm
+--     := Zsqrtd.norm_mul { re := 1, im := 1 } y
+--     rw[norm_dist]
+--     have hone_plus_i_norm : (⟨1,1⟩ : GaussianInt).norm = 2 := by exact Int.neg_inj.mp rfl
+--     rw[hone_plus_i_norm]
 
 
 
+-- theorem cancel_pow_two_if_znorm (m r : ℕ)
+--   : (∃ x : GaussianInt, (2 : ℤ)^r * (m : ℤ) = x.norm ) ↔ (∃ y : GaussianInt, m = y.norm) := by
+--     induction r with
+--     | zero => simp
+--     | succ r ih =>
+--       have halg : (2 : ℤ) ^(r+1) * (↑ m) = 2* (2^r * ↑ m) := by ring_nf
+--       constructor
+--       · intro h
+--         rcases h with ⟨x, hx⟩
+--         rw[halg] at hx
+--         have : ∃ y : GaussianInt, 2^r * (m : ℤ) = y.norm := by
+--           apply (cancel_two_if_znorm (2^r * m)).mp
+--           use x
+--           exact hx
+--         apply ih.mp
+--         exact this
+--       · intro h
+--         rcases h with ⟨y, hy⟩
+--         use (⟨1,1⟩ : GaussianInt)^(r+1) * y
+--         have hone_plus_i_norm : (⟨1,1⟩ : GaussianInt).norm = 2 := by exact Int.neg_inj.mp rfl
+--         have hpowers_comm_w_norm (n : ℕ) (z : GaussianInt): (z^n).norm = (z.norm)^n := by
+--           induction n with
+--           | zero => simp
+--           | succ n ih =>
+--             have dist_pow_GI: z^(n+1) = z * z^n := by ring
+--             rw[dist_pow_GI, Zsqrtd.norm_mul z (z^n)]
+--             rw[ih]
+--             have dist_pow_Z (a : ℤ) (n : ℕ) : a * a^n = a^(n+1) := Eq.symm (Int.pow_succ' a n)
+--             rw[dist_pow_Z (z.norm) n]
+--         rw[Zsqrtd.norm_mul (({ re := 1, im := 1})^(r+1)) y,
+--         hy, hpowers_comm_w_norm (r+1), hone_plus_i_norm]
 
-theorem even_primes_mod_4_if_sum_two_squares (n a b : ℕ) (hn : n ≠ 0) (heq : n = a ^ 2 + b ^ 2)
-  : Even (countPrimeFactorsMod4Eq3 n) := by
-  rcases odd_part_decomp hn with ⟨r,m, hrm⟩
-  have h1 : ∃ c d : ℕ, 2^r * m = c^2 + d^2 := by
-    rw[← hrm.1]
-    use a,b
-  rcases h1 with ⟨c,d, hcd⟩
-  have hcdZ : (2 : ℤ) ^ r * (m : ℤ) = (c : ℤ) ^ 2 + (d : ℤ) ^ 2 := by
-    exact_mod_cast hcd
-  have h2 : ∃ z : GaussianInt, 2^r * m = z.norm := by
-    use (⟨c,d⟩ : GaussianInt)
-    have h3 : (⟨c,d⟩ : GaussianInt).norm = c*c- (-1)* d*d := Int.neg_inj.mp rfl
-    simp only [Int.reduceNeg, neg_mul, one_mul, sub_neg_eq_add] at h3
-    have h4 : (c : ℤ) * c + d*d = (c : ℤ)^2 + d^2 := by
-      simp[pow_two]
-    rw[h4] at h3
-    rw[h3]
-    have : (c : ℤ)^2 + (d : ℤ)^2 = ((c^2+d^2) : ℤ) := by exact (Int.add_left_inj (↑d ^ 2)).mpr rfl
-    rw[this]
-    simpa using hcdZ
-  rw[cancel_pow_two_if_znorm m r] at h2
-  rw[← sum_two_int_squares_iff_gaussian_norm m] at h2
-  rw[sum_two_squares_Z_iff_N m] at h2
-  rcases h2 with ⟨s,t,hst⟩
-  have h3 : m ≡ 0 [MOD 4] ∨ m ≡ 1 [MOD 4] ∨ m ≡ 2 [MOD 4] := by
-    rw[hst]
-    exact sum_of_squares_mod_4 s t
-  have h4 : ¬ m ≡ 0 [MOD 4] ∧ ¬ m ≡ 2 [MOD 4] := by
-    have myh1 : m%2 =1 := by
-      have : m%2 = 1 := by
-        apply (odd_iff).mp
-        exact hrm.2
-      exact this
-    rw[Nat.odd_mod_four_iff] at myh1
-    cases myh1 with
-    | inl h =>
-      constructor
-      · by_contra
-        have hyp1 : m%4 = 0%4 := Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
-        have hyp2 : m % 4 = 1 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
-        rw[hyp2] at hyp1
-        cases hyp1
-      · by_contra
-        have hyp1 : m%4 = 2%4 := Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
-        have hyp2 : m % 4 = 1 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
-        rw[hyp2] at hyp1
-        cases hyp1
-    | inr h =>
-      constructor
-      · by_contra
-        have hyp1 : m%4 = 0%4
-        := by exact Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
-        have hyp2 : m % 4 = 3 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
-        rw[hyp2] at hyp1
-        cases hyp1
-      · by_contra
-        have hyp1 : m%4 = 2%4 := Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
-        have hyp2 : m % 4 = 3 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
-        rw[hyp2] at hyp1
-        cases hyp1
-  have h5 : m ≡ 1 [MOD 4] := by tauto
-  have h6 : Even (countPrimeFactorsMod4Eq3 m)  := even_countPrimeFactorsMod4Eq3_of_modEq_one m h5
-  have equal_countPrimeFactorsMod4Eq3
-  : countPrimeFactorsMod4Eq3 m = countPrimeFactorsMod4Eq3 n := by
-    rw[hrm.1]
-    simp only [countPrimeFactorsMod4Eq3, Nat.support_factorization]
-    have h2m_coprime : Coprime (2^r) m := by
-      have hm2 : m ≡ 1 [MOD 2] := h5.of_dvd (by decide : (2 : ℕ) ∣ 4)
-      have hOdd : Odd m := (Nat.odd_iff).2 hm2
-      have h2 : ¬ (2 ∣ m) := hOdd.not_two_dvd_nat
-      have hcop2 : Nat.Coprime 2 m := by
-        exact (Nat.prime_two.coprime_iff_not_dvd).2 h2
-      simpa using hcop2.pow_left r
-    symm
-    have h2prime : Nat.Prime 2 := prime_two
-    refine Finset.sum_congr ?hs ?hg
-    · ext p
-      simp only [Finset.mem_filter, mem_primeFactors, ne_eq, _root_.mul_eq_zero, Nat.pow_eq_zero,
-        OfNat.ofNat_ne_zero, false_and, false_or, and_congr_left_iff, and_congr_right_iff]
-      intro hpmod4 hprimep hmne0
-      constructor
-      · intro hdiv
-        have hdivcases : p ∣ 2^r ∨ p ∣ m := by exact Nat.Prime.dvd_or_dvd hprimep hdiv
-        cases hdivcases with
-        | inl h =>
-          have hp2 : p ∣ 2 := hprimep.dvd_of_dvd_pow h
-          have hpne1 : p ≠ 1 :=  Nat.Prime.ne_one hprimep
-          have : p = 2 := (Nat.prime_dvd_prime_iff_eq hprimep h2prime).mp hp2
-          rw[this] at hpmod4
-          cases hpmod4
-        | inr h =>
-          exact h
-      · intro hdivm
-        exact Nat.dvd_mul_left_of_dvd hdivm (2 ^ r)
-    · intro p hp
-      have : (2^r * m).factorization p = (2^r).factorization p + m.factorization p
-      := factorization_mul_apply_of_coprime h2m_coprime
-      rw[this]
-      have : (2^r).factorization = r • ((2).factorization) := by exact Nat.factorization_pow 2 r
-      rw[this]
-      simp only [Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul, Nat.add_eq_right, _root_.mul_eq_zero]
-      right
-      have : p ≠ 2 := by
-        by_contra c
-        rw[c] at hp
-        have hmod : 2% 4 = 3 := (Finset.mem_filter.mp hp).2
-        cases hmod
-      have hprimep : Nat.Prime p := by
-        have : p ∈ m.primeFactors := (Finset.mem_filter.1 hp).1
-        exact (Nat.mem_primeFactors.mp this).1
-      have hpnot1 : p ≠ 1 := Nat.Prime.ne_one hprimep
-      refine factorization_eq_zero_of_not_dvd ?_
-      by_contra c
-      rw[Nat.Prime.dvd_iff_eq h2prime hpnot1] at c
-      tauto
-  rw[equal_countPrimeFactorsMod4Eq3] at h6
-  exact h6
+
+
+
+-- theorem even_primes_mod_4_if_sum_two_squares (n a b : ℕ) (hn : n ≠ 0) (heq : n = a ^ 2 + b ^ 2)
+--   : Even (countPrimeFactorsMod4Eq3 n) := by
+--   rcases odd_part_decomp hn with ⟨r,m, hrm⟩
+--   have h1 : ∃ c d : ℕ, 2^r * m = c^2 + d^2 := by
+--     rw[← hrm.1]
+--     use a,b
+--   rcases h1 with ⟨c,d, hcd⟩
+--   have hcdZ : (2 : ℤ) ^ r * (m : ℤ) = (c : ℤ) ^ 2 + (d : ℤ) ^ 2 := by
+--     exact_mod_cast hcd
+--   have h2 : ∃ z : GaussianInt, 2^r * m = z.norm := by
+--     use (⟨c,d⟩ : GaussianInt)
+--     have h3 : (⟨c,d⟩ : GaussianInt).norm = c*c- (-1)* d*d := Int.neg_inj.mp rfl
+--     simp only [Int.reduceNeg, neg_mul, one_mul, sub_neg_eq_add] at h3
+--     have h4 : (c : ℤ) * c + d*d = (c : ℤ)^2 + d^2 := by
+--       simp[pow_two]
+--     rw[h4] at h3
+--     rw[h3]
+--     have : (c : ℤ)^2 + (d : ℤ)^2 = ((c^2+d^2) : ℤ) :=
+--by exact (Int.add_left_inj (↑d ^ 2)).mpr rfl
+--     rw[this]
+--     simpa using hcdZ
+--   rw[cancel_pow_two_if_znorm m r] at h2
+--   rw[← sum_two_int_squares_iff_gaussian_norm m] at h2
+--   rw[sum_two_squares_Z_iff_N m] at h2
+--   rcases h2 with ⟨s,t,hst⟩
+--   have h3 : m ≡ 0 [MOD 4] ∨ m ≡ 1 [MOD 4] ∨ m ≡ 2 [MOD 4] := by
+--     rw[hst]
+--     exact sum_of_squares_mod_4 s t
+--   have h4 : ¬ m ≡ 0 [MOD 4] ∧ ¬ m ≡ 2 [MOD 4] := by
+--     have myh1 : m%2 =1 := by
+--       have : m%2 = 1 := by
+--         apply (odd_iff).mp
+--         exact hrm.2
+--       exact this
+--     rw[Nat.odd_mod_four_iff] at myh1
+--     cases myh1 with
+--     | inl h =>
+--       constructor
+--       · by_contra
+--         have hyp1 : m%4 = 0%4 := Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
+--         have hyp2 : m % 4 = 1 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
+--         rw[hyp2] at hyp1
+--         cases hyp1
+--       · by_contra
+--         have hyp1 : m%4 = 2%4 := Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
+--         have hyp2 : m % 4 = 1 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
+--         rw[hyp2] at hyp1
+--         cases hyp1
+--     | inr h =>
+--       constructor
+--       · by_contra
+--         have hyp1 : m%4 = 0%4
+--         := by exact Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
+--         have hyp2 : m % 4 = 3 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
+--         rw[hyp2] at hyp1
+--         cases hyp1
+--       · by_contra
+--         have hyp1 : m%4 = 2%4 := Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd this) n)
+--         have hyp2 : m % 4 = 3 % 4 :=  Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd h) n)
+--         rw[hyp2] at hyp1
+--         cases hyp1
+--   have h5 : m ≡ 1 [MOD 4] := by tauto
+--   have h6 : Even (countPrimeFactorsMod4Eq3 m)  := even_countPrimeFactorsMod4Eq3_of_modEq_one m h5
+--   have equal_countPrimeFactorsMod4Eq3
+--   : countPrimeFactorsMod4Eq3 m = countPrimeFactorsMod4Eq3 n := by
+--     rw[hrm.1]
+--     simp only [countPrimeFactorsMod4Eq3, Nat.support_factorization]
+--     have h2m_coprime : Coprime (2^r) m := by
+--       have hm2 : m ≡ 1 [MOD 2] := h5.of_dvd (by decide : (2 : ℕ) ∣ 4)
+--       have hOdd : Odd m := (Nat.odd_iff).2 hm2
+--       have h2 : ¬ (2 ∣ m) := hOdd.not_two_dvd_nat
+--       have hcop2 : Nat.Coprime 2 m := by
+--         exact (Nat.prime_two.coprime_iff_not_dvd).2 h2
+--       simpa using hcop2.pow_left r
+--     symm
+--     have h2prime : Nat.Prime 2 := prime_two
+--     refine Finset.sum_congr ?hs ?hg
+--     · ext p
+--       simp only [Finset.mem_filter, mem_primeFactors, ne_eq, _root_.mul_eq_zero, Nat.pow_eq_zero,
+--         OfNat.ofNat_ne_zero, false_and, false_or, and_congr_left_iff, and_congr_right_iff]
+--       intro hpmod4 hprimep hmne0
+--       constructor
+--       · intro hdiv
+--         have hdivcases : p ∣ 2^r ∨ p ∣ m := by exact Nat.Prime.dvd_or_dvd hprimep hdiv
+--         cases hdivcases with
+--         | inl h =>
+--           have hp2 : p ∣ 2 := hprimep.dvd_of_dvd_pow h
+--           have hpne1 : p ≠ 1 :=  Nat.Prime.ne_one hprimep
+--           have : p = 2 := (Nat.prime_dvd_prime_iff_eq hprimep h2prime).mp hp2
+--           rw[this] at hpmod4
+--           cases hpmod4
+--         | inr h =>
+--           exact h
+--       · intro hdivm
+--         exact Nat.dvd_mul_left_of_dvd hdivm (2 ^ r)
+--     · intro p hp
+--       have : (2^r * m).factorization p = (2^r).factorization p + m.factorization p
+--       := factorization_mul_apply_of_coprime h2m_coprime
+--       rw[this]
+--       have : (2^r).factorization = r • ((2).factorization) := by exact Nat.factorization_pow 2 r
+--       rw[this]
+--       simp only [Finsupp.coe_smul,
+-- Pi.smul_apply, smul_eq_mul, Nat.add_eq_right, _root_.mul_eq_zero]
+--       right
+--       have : p ≠ 2 := by
+--         by_contra c
+--         rw[c] at hp
+--         have hmod : 2% 4 = 3 := (Finset.mem_filter.mp hp).2
+--         cases hmod
+--       have hprimep : Nat.Prime p := by
+--         have : p ∈ m.primeFactors := (Finset.mem_filter.1 hp).1
+--         exact (Nat.mem_primeFactors.mp this).1
+--       have hpnot1 : p ≠ 1 := Nat.Prime.ne_one hprimep
+--       refine factorization_eq_zero_of_not_dvd ?_
+--       by_contra c
+--       rw[Nat.Prime.dvd_iff_eq h2prime hpnot1] at c
+--       tauto
+--   rw[equal_countPrimeFactorsMod4Eq3] at h6
+--   exact h6
 
 
 theorem sum_split (α β : Type) [DecidableEq α] [AddCommMonoid β]
@@ -1237,180 +1320,739 @@ theorem sum_split (α β : Type) [DecidableEq α] [AddCommMonoid β]
         _   = f p + ∑ q ∈  s.erase p, f q := by
               simp only [hpnot, not_false_eq_true, Finset.sum_insert]
 
-#check Finset.even_sum
 
-theorem even_other_prime_factors_impl_even
-(p n a b : ℕ) (hdiv : p ∈ n.primeFactors) (hp : p ≡ 3 [MOD 4]) (hsumsq : n = a ^ 2 + b ^ 2)
-: (∀ q ∈ n.primeFactors,
-((q ≠ p ∧ q ≡ 3 [MOD 4]) → Even (n.factorization q))) → Even (n.factorization p) := by
-  by_cases hn0 : n = 0
-  · intro h
-    rw[hn0]
-    simp only [Nat.factorization_zero, Finsupp.coe_zero, Pi.zero_apply, Even.zero]
-  · have heventotalfactors : Even (countPrimeFactorsMod4Eq3 n) := by
-      exact even_primes_mod_4_if_sum_two_squares n a b hn0 hsumsq
-    intro hotherfactorseven
-    simp only [countPrimeFactorsMod4Eq3, Nat.support_factorization] at heventotalfactors
-    have hpS : p ∈ n.primeFactors.filter (fun q => q % 4 = 3) := by
-      apply Finset.mem_filter.2
-      refine ⟨hdiv, ?_⟩
-      simpa [Nat.ModEq] using hp
-    have hsplit :
-    (∑ q ∈ n.primeFactors.filter (fun q => q % 4 = 3), n.factorization q)
-      =
-    n.factorization p
-      + ∑ q ∈ (n.primeFactors.filter (fun q => q % 4 = 3)).erase p, n.factorization q := by
-      simpa using
-        (sum_split ℕ ℕ
-          (s := n.primeFactors.filter (fun q => q % 4 = 3))
-          (f := fun q => n.factorization q)
-          (p := p)
-          hpS)
-    rw[hsplit] at heventotalfactors
-    have hconvertmod2 :
-    (n.factorization p + ∑ q ∈ {q ∈ n.primeFactors | q % 4 = 3}.erase p, n.factorization q ) % 2 =0
-    := even_iff.mp heventotalfactors
-    have hdistrmod2 (a b : ℕ) (hab : (a+b)%2 = 0): a%2 = b%2 := by
-      have : (a + b ) % 2 = (a % 2 + b % 2) % 2 := add_mod a b 2
-      rw[this] at hab
-      by_cases h : a%2 = 0
-      · rw[h] at hab
-        simp only [zero_add, dvd_refl, mod_mod_of_dvd] at hab
-        rw[h, ← hab]
-      · have h' : a % 2 = 1 :=  mod_two_ne_zero.mp h
-        rw[h'] at hab
-        simp only [add_mod_mod] at hab
-        rw[ h']
-        have hdistr : (1+b) % 2 = (1 % 2 + b % 2) % 2 := add_mod 1 b 2
-        by_contra c
-        have : b % 2 = 0 := mod_two_ne_one.mp fun a ↦ c (id (Eq.symm a))
-        rw[hdistr] at hab
-        rw[this] at hab
-        simp only [mod_succ, add_zero, one_ne_zero] at hab
-    apply hdistrmod2 (n.factorization p) at hconvertmod2
-    set T : Finset ℕ := ({q ∈ n.primeFactors | q % 4 = 3}).erase p with hT
-    have : (∑ q ∈ {q ∈ n.primeFactors | q % 4 = 3}.erase p, n.factorization q) % 2 =0 := by
-      have hterm : ∀ q ∈ T, (n.factorization q) % 2 = 0 := by
-        intro q hq
-        have : Even (n.factorization q) → (n.factorization q) % 2 = 0
-        := fun a ↦(fun {n} ↦ even_iff.mp) a
-        apply this
-        apply hotherfactorseven
-        · have hq' : q ∈ ({q ∈ n.primeFactors | q % 4 = 3}).erase p := by
-            simpa [hT] using hq
-          have hq_in_filter : q ∈ {q ∈ n.primeFactors | q % 4 = 3} := Finset.mem_of_mem_erase hq
-          exact Finset.mem_of_mem_filter q hq_in_filter
-        · constructor
-          · have hq' : q ∈ ({q ∈ n.primeFactors | q % 4 = 3}).erase p := by
-              simpa [hT] using hq
-            exact Finset.ne_of_mem_erase hq
-          · have hq' : q ∈ ({q ∈ n.primeFactors | q % 4 = 3}).erase p := by
-              simpa [hT] using hq
-            exact (Finset.mem_filter.1 ((Finset.mem_erase.1 hq').2)).2
-      have : (∑ q ∈  T, n.factorization q) % 2
-      = (∑ q ∈  T, (n.factorization q % 2)) % 2 := by
-        exact Finset.sum_nat_mod T 2 ⇑n.factorization
-      rw[ ← hT]
+-- theorem even_other_prime_factors_impl_even
+-- (p n a b : ℕ) (hdiv : p ∈ n.primeFactors) (hp : p ≡ 3 [MOD 4]) (hsumsq : n = a ^ 2 + b ^ 2)
+-- : (∀ q ∈ n.primeFactors,
+-- ((q ≠ p ∧ q ≡ 3 [MOD 4]) → Even (n.factorization q))) → Even (n.factorization p) := by
+--   by_cases hn0 : n = 0
+--   · intro h
+--     rw[hn0]
+--     simp only [Nat.factorization_zero, Finsupp.coe_zero, Pi.zero_apply, Even.zero]
+--   · have heventotalfactors : Even (countPrimeFactorsMod4Eq3 n) := by
+--       exact even_primes_mod_4_if_sum_two_squares n a b hn0 hsumsq
+--     intro hotherfactorseven
+--     simp only [countPrimeFactorsMod4Eq3, Nat.support_factorization] at heventotalfactors
+--     have hpS : p ∈ n.primeFactors.filter (fun q => q % 4 = 3) := by
+--       apply Finset.mem_filter.2
+--       refine ⟨hdiv, ?_⟩
+--       simpa [Nat.ModEq] using hp
+--     have hsplit :
+--     (∑ q ∈ n.primeFactors.filter (fun q => q % 4 = 3), n.factorization q)
+--       =
+--     n.factorization p
+--       + ∑ q ∈ (n.primeFactors.filter (fun q => q % 4 = 3)).erase p, n.factorization q := by
+--       simpa using
+--         (sum_split ℕ ℕ
+--           (s := n.primeFactors.filter (fun q => q % 4 = 3))
+--           (f := fun q => n.factorization q)
+--           (p := p)
+--           hpS)
+--     rw[hsplit] at heventotalfactors
+--     have hconvertmod2 :
+--     (n.factorization p + ∑ q ∈ {q ∈ n.primeFactors | q % 4 = 3}.erase p,
+-- n.factorization q ) % 2 =0
+--     := even_iff.mp heventotalfactors
+--     have hdistrmod2 (a b : ℕ) (hab : (a+b)%2 = 0): a%2 = b%2 := by
+--       have : (a + b ) % 2 = (a % 2 + b % 2) % 2 := add_mod a b 2
+--       rw[this] at hab
+--       by_cases h : a%2 = 0
+--       · rw[h] at hab
+--         simp only [zero_add, dvd_refl, mod_mod_of_dvd] at hab
+--         rw[h, ← hab]
+--       · have h' : a % 2 = 1 :=  mod_two_ne_zero.mp h
+--         rw[h'] at hab
+--         simp only [add_mod_mod] at hab
+--         rw[ h']
+--         have hdistr : (1+b) % 2 = (1 % 2 + b % 2) % 2 := add_mod 1 b 2
+--         by_contra c
+--         have : b % 2 = 0 := mod_two_ne_one.mp fun a ↦ c (id (Eq.symm a))
+--         rw[hdistr] at hab
+--         rw[this] at hab
+--         simp only [mod_succ, add_zero, one_ne_zero] at hab
+--     apply hdistrmod2 (n.factorization p) at hconvertmod2
+--     set T : Finset ℕ := ({q ∈ n.primeFactors | q % 4 = 3}).erase p with hT
+--     have : (∑ q ∈ {q ∈ n.primeFactors | q % 4 = 3}.erase p, n.factorization q) % 2 =0 := by
+--       have hterm : ∀ q ∈ T, (n.factorization q) % 2 = 0 := by
+--         intro q hq
+--         have : Even (n.factorization q) → (n.factorization q) % 2 = 0
+--         := fun a ↦(fun {n} ↦ even_iff.mp) a
+--         apply this
+--         apply hotherfactorseven
+--         · have hq' : q ∈ ({q ∈ n.primeFactors | q % 4 = 3}).erase p := by
+--             simpa [hT] using hq
+--           have hq_in_filter : q ∈ {q ∈ n.primeFactors | q % 4 = 3} := Finset.mem_of_mem_erase hq
+--           exact Finset.mem_of_mem_filter q hq_in_filter
+--         · constructor
+--           · have hq' : q ∈ ({q ∈ n.primeFactors | q % 4 = 3}).erase p := by
+--               simpa [hT] using hq
+--             exact Finset.ne_of_mem_erase hq
+--           · have hq' : q ∈ ({q ∈ n.primeFactors | q % 4 = 3}).erase p := by
+--               simpa [hT] using hq
+--             exact (Finset.mem_filter.1 ((Finset.mem_erase.1 hq').2)).2
+--       have : (∑ q ∈  T, n.factorization q) % 2
+--       = (∑ q ∈  T, (n.factorization q % 2)) % 2 := by
+--         exact Finset.sum_nat_mod T 2 ⇑n.factorization
+--       rw[ ← hT]
+--       rw[this]
+--       --How to formalize this lemma was assisted by AI
+--       have hsum0 : (∑ q ∈  T, n.factorization q % 2) = 0 := by
+--         calc
+--           (∑ q ∈  T, n.factorization q % 2)
+--               = ∑ q ∈  T, 0 := by
+--                   refine Finset.sum_congr rfl ?_
+--                   intro q hq
+--                   simpa using (hterm q hq)
+--           _   = 0 := by simp
+--       rw[hsum0]
+--     rw[← hT] at this
+--     rw[this] at hconvertmod2
+--     exact even_iff.mpr hconvertmod2
+
+noncomputable def giFactors (z : GaussianInt) : Multiset (Associates GaussianInt) :=
+  UniqueFactorizationMonoid.normalizedFactors (Associates.mk z)
+
+theorem giFactors_prod_associated {z : GaussianInt} (hz : z ≠ 0) :
+    Associated (giFactors z).prod (Associates.mk z) := by
+  have hz' : (Associates.mk z : Associates GaussianInt) ≠ 0 := by
+    simpa [Associates.mk_eq_zero] using hz
+  simpa [giFactors] using
+    (UniqueFactorizationMonoid.prod_normalizedFactors (a := (Associates.mk z)) hz')
+
+
+
+theorem sum_two_squares_descent
+(n p a b : ℕ) [Fact (Nat.Prime p)] (hdiv : p ∣ n) (hp : p ≡ 3 [MOD 4]) (hab : n = a ^ 2 + b ^ 2) :
+p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b := by
+  have hn0: n ≡ 0 [MOD p] := modEq_zero_iff_dvd.mpr hdiv
+  rw [hab] at hn0
+  have ha2b20modp: (a : ZMod p)^2 + (b : ZMod p)^2 = 0 := by
+    rw[← ZMod.natCast_eq_natCast_iff (a^2+b^2) 0 p] at hn0
+    simpa only [cast_add, cast_pow, cast_zero] using hn0
+  by_cases ha0 : (a : ZMod p) = 0
+  · rw[ha0] at ha2b20modp
+    simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add,
+      pow_eq_zero_iff] at ha2b20modp
+    have hpdiva : p ∣ a := (ZMod.natCast_eq_zero_iff a p).mp ha0
+    have hpdivb : p ∣ b := (ZMod.natCast_eq_zero_iff b p).mp ha2b20modp
+    have harewrite : ∃ c : ℕ, a = p * c := Stream'.mem_iff_exists_get_eq.mp hpdiva
+    have hbrewrite : ∃ d : ℕ, b = p * d := Stream'.mem_iff_exists_get_eq.mp hpdivb
+    rcases harewrite with ⟨c, hc⟩
+    rcases hbrewrite with ⟨d, hd⟩
+    rw[hd, hc] at hab
+    have hyp1: (p*c)^2 = p^2 * c^2 := Nat.mul_pow p c 2
+    have hyp2: (p*d)^2 = p^2 * d^2 :=  Nat.mul_pow p d 2
+    have hyp3 : p^2*c^2 + p^2*d^2 = p^2*(c^2 + d^2) :=
+      Eq.symm (Nat.mul_add (p ^ 2) (c ^ 2) (d ^ 2))
+    rw[hyp1, hyp2, hyp3] at hab
+    constructor
+    · exact Dvd.intro (c ^ 2 + d ^ 2) (id (Eq.symm hab))
+    · constructor
+      · exact hpdiva
+      · exact hpdivb
+  · exfalso
+    have haainv : (a : ZMod p) * ((a : ZMod p)⁻¹) = 1 := by
+      simpa only using (mul_inv_cancel₀ (a := (a : ZMod p)) ha0)
+    have hintroainv: ((a : ZMod p)⁻¹)^2 * ((a : ZMod p)^2 + (b : ZMod p)^2) = 0 := by
+      simp only [inv_pow, _root_.mul_eq_zero, inv_eq_zero, ne_eq, OfNat.ofNat_ne_zero,
+        not_false_eq_true, pow_eq_zero_iff]
+      right
+      exact ha2b20modp
+    rw[mul_add (((a : ZMod p)⁻¹)^2) ((a : ZMod p)^2) ((b : ZMod p)^2)] at hintroainv
+    have : (((a : ZMod p)⁻¹)^2) = ((a : ZMod p)^2)⁻¹ := by
+      simpa only using (inv_pow (a : ZMod p) 2)
+    nth_rewrite 1 [this] at hintroainv
+    have hsq_ne0 : ((a : ZMod p)^2) ≠ 0 := by
+      exact pow_ne_zero 2 ha0
+    have : ((a : ZMod p)^2)⁻¹ * ((a : ZMod p)^2) = 1 := by
+      simpa only using (inv_mul_cancel₀ (a := ((a : ZMod p)^2)) hsq_ne0)
+    rw[this] at hintroainv
+    have : (a : ZMod p)⁻¹ ^ 2 * (b : ZMod p) ^ 2
+      = ((a : ZMod p)⁻¹ * (b : ZMod p))^2 := by
+      simpa [mul_comm, mul_left_comm, mul_assoc] using
+        (mul_pow ((a : ZMod p)⁻¹) (b : ZMod p) 2).symm
+    rw[this] at hintroainv
+    have hnewgoal : (-1 : ZMod p) + (1 + ((↑a)⁻¹ * ↑b) ^ 2) = -1 := add_eq_left.mpr hintroainv
+    simp only [neg_add_cancel_left] at hnewgoal
+    have hissquareneg1 : IsSquare (-1 : ZMod p) := by
+      refine (isSquare_iff_exists_mul_self (-1)).mpr ?_
+      use ((↑a)⁻¹ * ↑b)
+      symm
+      have : (a : ZMod p)⁻¹ * ↑b * ((↑a)⁻¹ * ↑b) = ((↑a)⁻¹ * ↑b)^2 := by
+        simp [pow_two, mul_left_comm, mul_comm]
       rw[this]
-      --How to formalize this lemma was assisted by AI
-      have hsum0 : (∑ q ∈  T, n.factorization q % 2) = 0 := by
-        calc
-          (∑ q ∈  T, n.factorization q % 2)
-              = ∑ q ∈  T, 0 := by
-                  refine Finset.sum_congr rfl ?_
-                  intro q hq
-                  simpa using (hterm q hq)
-          _   = 0 := by simp
-      rw[hsum0]
-    rw[← hT] at this
-    rw[this] at hconvertmod2
-    exact even_iff.mpr hconvertmod2
+      exact hnewgoal
+    have : ¬ IsSquare (-1 : ZMod p) := primes_wo_neg1_square p hp
+    tauto
+
+
+
+theorem factorization_after_div_by_p2
+(n p m : ℕ) (hp : Nat.Prime p) (hnpm : n = p ^ 2 * m) (hnn0 : n ≠ 0) :
+(m.factorization p )+2= n.factorization p ∧ (∀ q ≠ p, m.factorization q = n.factorization q) := by
+  have hpn0 : p ≠ 0 := Nat.Prime.ne_zero hp
+  have hp2n0 : p^2 ≠ 0 := by exact pow_ne_zero 2 hpn0
+  have hmn0 : m ≠ 0 := by
+    by_contra c
+    rw[hnpm,c ] at hnn0
+    have : p^2 * 0 = 0 := Nat.mul_zero (p ^ 2)
+    rw[this] at hnn0
+    apply hnn0
+    rfl
+  have hfactorizationrw: (n.factorization = m.factorization + 2 • p.factorization) := by
+    rw[hnpm]
+    rw[Nat.factorization_mul hp2n0 hmn0, factorization_pow, add_comm]
+  have hrwat2 (q : ℕ) :
+  (m.factorization + 2 • p.factorization) q = m.factorization q + 2 • p.factorization q :=
+  Nat.add_zero ((m.factorization q).add ((2 • p.factorization) q))
+  constructor
+  · rw[← hfactorizationrw] at hrwat2
+    rw[hrwat2]
+    have : p.factorization p = 1 := Prime.factorization_self hp
+    rw[this]
+    simp only [smul_eq_mul, mul_one]
+  · intro q hq
+    rw[hfactorizationrw, hrwat2]
+    have : p.factorization q = 0 := by
+      by_cases h : q = 1
+      · rw[h]
+        exact factorization_one_right p
+      · have : ¬ q ∣ p := by
+          rw[Nat.Prime.dvd_iff_eq]
+          · tauto
+          · exact hp
+          · exact h
+        exact factorization_eq_zero_of_not_dvd this
+    rw[this]
+    simp only [nsmul_zero, add_zero]
 
 
 
 
 
+def P (n : ℕ) : Prop :=
+  (∃ a b : ℕ, n = a^2 + b^2) →
+    ∀ p, Nat.Prime p →  (p ≡ 3 [MOD 4] → Even (n.factorization p))
 
---The idea of how to set up the induction with the correct scope of s is due to ChatGPT
-theorem nat_sum_two_square (n : ℕ) :
-    (∃ a b : ℕ, n = a^2 + b^2) ↔
-      (∀ p ∈ n.primeFactors, p ≡ 3 [MOD 4] → Even (n.factorization p)) := by
-  let P : Finset ℕ → Prop :=
-    fun s =>
-      ∀ n : ℕ, n.primeFactors = s →
-        ((∃ a b : ℕ, n = a^2 + b^2) ↔
-          (∀ p ∈ n.primeFactors, p ≡ 3 [MOD 4] → Even (n.factorization p)))
+theorem by_countPrimeFactorsMod4Eq3_strong_induction :
+    ∀ n, P n := by
+  have H : ∀ k, ∀ n, countPrimeFactorsMod4Eq3 n = k → P n := by
+    intro k
+    induction k using Nat.strong_induction_on with
+    | _ k IH =>
+      intro n hk
+      induction k with
+      | zero =>
+        rw[countPrimeFactorsMod4Eq3] at hk
+        have hrefine: ∀ p ∈  n.factorization.support.filter (fun q => q % 4 = 3),
+         n.factorization p = 0 := by
+          intro q hq_support
+          have hq_mem :
+              q ∈ n.factorization.support.filter (fun p => p % 4 = 3) := by
+            exact Finset.mem_def.mpr hq_support
+          have hall :
+              ∀ r ∈ n.factorization.support.filter (fun p => p % 4 = 3),
+                n.factorization r = 0 := by
+            simpa using (Finset.sum_eq_zero_iff.mp hk)
+          exact hall q hq_mem
+        rw[P]
+        intro hab p hp hpmod4
+        by_cases hfactor : n.factorization p = 0
+        · rw[hfactor]
+          exact even_iff.mpr rfl
+        · exfalso
+          have hpinfactors : p ∈ n.factorization.support := by
+            by_contra c
+            have : n.factorization p = 0 := Finsupp.notMem_support_iff.mp c
+            rw[this] at hfactor
+            tauto
+          have : p%4 = 3 := by
+            exact
+              Eq.symm
+                (Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd (id (ModEq.symm hpmod4))) n))
+          apply hfactor
+          apply hrefine
+          exact Finset.mem_filter.mpr ⟨hpinfactors, this⟩
+      | succ k ih =>
+        rw[countPrimeFactorsMod4Eq3] at hk
+        rw[P]
+        intro hab p hp hpmod4
+        by_cases hfactor : n.factorization p = 0
+        · rw[hfactor]
+          exact even_iff.mpr rfl
+        · have hpinfactors : p ∈ n.primeFactors := by
+            by_contra c
+            have : n.factorization p = 0 := Finsupp.notMem_support_iff.mp c
+            rw[this] at hfactor
+            tauto
+          have hpmod4': p%4 = 3 := by
+            exact
+              Eq.symm
+                (Nat.add_right_cancel (congrFun (congrArg HAdd.hAdd (id (ModEq.symm hpmod4))) n))
+          have hpprime : Nat.Prime p := (irreducible_iff_nat_prime p).mp hp
+          have hpprime' : Fact (Nat.Prime p) := ⟨hpprime⟩
+          have hpdivn : p ∣ n := dvd_of_mem_primeFactors hpinfactors
+          rcases hab with ⟨a,b,hab⟩
+          have hdesc : p ^ 2 ∣ n ∧ p ∣ a ∧ p ∣ b :=
+           sum_two_squares_descent n p a b hpdivn hpmod4 hab
+          rcases hdesc.1 with ⟨m, hm⟩
+          by_cases hnn0 : n = 0
+          · rw[hnn0]
+            rw[ Nat.factorization_zero]
+            simp only [Finsupp.coe_zero, Pi.zero_apply, Even.zero]
+          · have hnfactortomfactor: n.factorization p = (m.factorization p) + 2 := by
+              symm
+              exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).1
+            rw[hnfactortomfactor]
+            have heveniffevenplus2 (n : ℕ) : Even n ↔ Even (n+2) := by
+              constructor
+              · intro h
+                have h1 : n % 2 = 0 := even_iff.mp h
+                have h2 : (n+2)%2 = (n%2 + 2%2) % 2 := add_mod n 2 2
+                refine even_iff.mpr ?_
+                rw[h2]
+                rw[h1]
+              · intro h
+                have h1 : (n+2) % 2 = 0 := even_iff.mp h
+                have h2 : (n+2)%2 = (n%2 + 2%2) % 2 := add_mod n 2 2
+                refine even_iff.mpr ?_
+                rw[h1] at h2
+                simp only [mod_self, add_zero, dvd_refl, mod_mod_of_dvd] at h2
+                symm
+                exact h2
+            rw[← heveniffevenplus2]
+            have : (countPrimeFactorsMod4Eq3 m) + 2 = countPrimeFactorsMod4Eq3 n := by
+              repeat rw[countPrimeFactorsMod4Eq3]
+              have hpS : p ∈ n.primeFactors.filter (fun q => q % 4 = 3) := by
+                apply Finset.mem_filter.2
+                refine ⟨hpinfactors, ?_⟩
+                exact hpmod4'
+              have hsplit :
+              (∑ q ∈ n.primeFactors.filter (fun q => q % 4 = 3), n.factorization q)
+                =
+              n.factorization p
+                + ∑ q ∈ (n.primeFactors.filter (fun q => q % 4 = 3)).erase p,
+                 n.factorization q := by
+                simpa using
+                  (sum_split ℕ ℕ
+                    (s := n.primeFactors.filter (fun q => q % 4 = 3))
+                    (f := fun q => n.factorization q)
+                    (p := p)
+                    hpS)
+              have hrewritetrick (x : ℕ ): x.factorization.support = x.primeFactors :=
+                Nat.support_factorization x
+              rw[hrewritetrick m, hrewritetrick n]
+              rw[hsplit]
+              by_cases hpinfactors' : p ∈ m.primeFactors
+              · have hpS' : p ∈ m.primeFactors.filter (fun q => q % 4 = 3) := by
+                  apply Finset.mem_filter.2
+                  refine ⟨hpinfactors', ?_⟩
+                  exact hpmod4'
+                have hsplit' :
+                (∑ q ∈ m.primeFactors.filter (fun q => q % 4 = 3), m.factorization q)
+                  =
+                m.factorization p
+                  + ∑ q ∈ (m.primeFactors.filter (fun q => q % 4 = 3)).erase p,
+                   m.factorization q := by
+                  simpa using
+                    (sum_split ℕ ℕ
+                      (s := m.primeFactors.filter (fun q => q % 4 = 3))
+                      (f := fun q => m.factorization q)
+                      (p := p)
+                      hpS')
+                rw[hsplit']
+                rw[hnfactortomfactor]
+                nth_rewrite 4 [add_comm]
+                nth_rewrite 2 [add_assoc]
+                nth_rewrite 3 [add_comm]
+                simp only [Nat.add_right_cancel_iff, Nat.add_left_cancel_iff]
+                refine Finset.sum_congr ?_ ?_
+                · rw[hm]
+                  apply Finset.ext
+                  intro q
+                  have hp2mne0: p^2 * m ≠ 0 := by
+                        rw[← hm]
+                        exact hnn0
+                  constructor
+                  · intro hq
+                    have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                    have hq_memF :
+                        q ∈ m.primeFactors.filter (fun r => r % 4 = 3) :=
+                      Finset.mem_of_mem_erase hq
+                    have hq_mem : q ∈ m.primeFactors :=
+                      (Finset.mem_filter.mp hq_memF).1
+                    have hq_mod : q % 4 = 3 :=
+                      (Finset.mem_filter.mp hq_memF).2
+                    have hq_mem' : q ∈ (p^2 * m).primeFactors := by
+                      refine mem_primeFactors.mpr ?_
+                      constructor
+                      · exact prime_of_mem_primeFactors hq_mem
+                      · constructor
+                        · have : q ∣ m := dvd_of_mem_primeFactors hq_mem
+                          exact Nat.dvd_mul_left_of_dvd this (p ^ 2)
+                        · exact hp2mne0
+                    apply Finset.mem_erase.mpr
+                    constructor
+                    · exact hq_ne
+                    · apply Finset.mem_filter.mpr
+                      constructor
+                      · assumption
+                      · assumption
+                  · intro hq
+                    have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                    have hq_memF :
+                        q ∈ (p^2 * m).primeFactors.filter (fun r => r % 4 = 3) :=
+                      Finset.mem_of_mem_erase hq
+                    have hq_mem : q ∈ (p^2 * m).primeFactors :=
+                      (Finset.mem_filter.mp hq_memF).1
+                    have hq_mod : q % 4 = 3 :=
+                      (Finset.mem_filter.mp hq_memF).2
+                    have hfac : m.factorization q = (p^2 * m).factorization q := by
+                      apply (factorization_after_div_by_p2 (p^2*m) p m hpprime rfl hp2mne0).2
+                      exact hq_ne
+                    have h1 : q ∣ p^2 * m := dvd_of_mem_primeFactors hq_mem
+                    have hqprime : Nat.Prime q := prime_of_mem_primeFactors hq_mem
+                    have hq_mem' : q ∈ m.primeFactors := by
+                      refine mem_primeFactors.mpr ?_
+                      constructor
+                      · exact prime_of_mem_primeFactors hq_mem
+                      · constructor
+                        · have : q ∣ m := by
+                            have h2 : q ∣ p^2 ∨ q ∣ m := by
+                              rw[← Nat.Prime.dvd_mul]
+                              · exact h1
+                              · exact hqprime
+                            cases h2 with
+                            | inl h =>
+                              exfalso
+                              have : q ∣ p := Nat.Prime.dvd_of_dvd_pow hqprime h
+                              have : q = p := (Nat.prime_dvd_prime_iff_eq hqprime hp).mp this
+                              rw[this] at hq_ne
+                              tauto
+                            | inr h =>
+                              exact h
+                          exact this
+                        · by_contra c
+                          rw[c] at hp2mne0
+                          simp only [mul_zero, ne_eq, not_true_eq_false] at hp2mne0
+                    apply Finset.mem_erase.mpr
+                    constructor
+                    · exact hq_ne
+                    · apply Finset.mem_filter.mpr
+                      constructor
+                      · assumption
+                      · assumption
+                · intro q hq
+                  have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                  exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).2 q hq_ne
+              · have h1 : m.factorization p = 0 := Finsupp.notMem_support_iff.mp hpinfactors'
+                have h2 : n.factorization p = 2 := by
+                  rw[hnfactortomfactor]
+                  rw[h1]
+                rw[h2]
+                rw[add_comm]
+                simp only [Nat.add_left_cancel_iff]
+                refine Finset.sum_congr ?_ ?_
+                · rw[hm]
+                  apply Finset.ext
+                  intro q
+                  have hp2mne0: p^2 * m ≠ 0 := by
+                        rw[← hm]
+                        exact hnn0
+                  constructor
+                  · intro hq
+                    have hq_ne : q ≠ p := by
+                      by_contra c
+                      have hyp1 : q ∈ m.primeFactors := Finset.mem_of_mem_filter q hq
+                      have hyp2 : m.factorization q ≠ 0 := Finsupp.mem_support_iff.mp hyp1
+                      rw[c, h1] at hyp2
+                      tauto
+                    have hq_mem : q ∈ m.primeFactors :=
+                      (Finset.mem_filter.mp hq).1
+                    have hq_mod : q % 4 = 3 :=
+                      (Finset.mem_filter.mp hq).2
+                    have hq_mem' : q ∈ (p^2 * m).primeFactors := by
+                      refine mem_primeFactors.mpr ?_
+                      constructor
+                      · exact prime_of_mem_primeFactors hq_mem
+                      · constructor
+                        · have : q ∣ m := dvd_of_mem_primeFactors hq_mem
+                          exact Nat.dvd_mul_left_of_dvd this (p ^ 2)
+                        · exact hp2mne0
+                    apply Finset.mem_erase.mpr
+                    constructor
+                    · exact hq_ne
+                    · apply Finset.mem_filter.mpr
+                      constructor
+                      · assumption
+                      · assumption
+                  · intro hq
+                    have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                    have hq_memF :
+                        q ∈ (p^2 * m).primeFactors.filter (fun r => r % 4 = 3) :=
+                      Finset.mem_of_mem_erase hq
+                    have hq_mem : q ∈ (p^2 * m).primeFactors :=
+                      (Finset.mem_filter.mp hq_memF).1
+                    have hq_mod : q % 4 = 3 :=
+                      (Finset.mem_filter.mp hq_memF).2
+                    have hfac : m.factorization q = (p^2 * m).factorization q := by
+                      apply (factorization_after_div_by_p2 (p^2*m) p m hpprime rfl hp2mne0).2
+                      exact hq_ne
+                    have h1 : q ∣ p^2 * m := dvd_of_mem_primeFactors hq_mem
+                    have hqprime : Nat.Prime q := prime_of_mem_primeFactors hq_mem
+                    have hq_mem' : q ∈ m.primeFactors := by
+                      refine mem_primeFactors.mpr ?_
+                      constructor
+                      · exact prime_of_mem_primeFactors hq_mem
+                      · constructor
+                        · have : q ∣ m := by
+                            have h2 : q ∣ p^2 ∨ q ∣ m := by
+                              rw[← Nat.Prime.dvd_mul]
+                              · exact h1
+                              · exact hqprime
+                            cases h2 with
+                            | inl h =>
+                              exfalso
+                              have : q ∣ p := Nat.Prime.dvd_of_dvd_pow hqprime h
+                              have : q = p := (Nat.prime_dvd_prime_iff_eq hqprime hp).mp this
+                              rw[this] at hq_ne
+                              tauto
+                            | inr h =>
+                              exact h
+                          exact this
+                        · by_contra c
+                          rw[c] at hp2mne0
+                          simp only [mul_zero, ne_eq, not_true_eq_false] at hp2mne0
+                    apply Finset.mem_filter.mpr
+                    constructor
+                    · assumption
+                    · assumption
+                · intro q hq
+                  have hq_ne : q ≠ p := Finset.ne_of_mem_erase hq
+                  exact (factorization_after_div_by_p2 n p m hpprime hm hnn0).2 q hq_ne
+            have h' : P m := by
+              apply IH (countPrimeFactorsMod4Eq3 m)
+              · rw[← countPrimeFactorsMod4Eq3] at hk
+                rw[← hk]
+                rw[← this]
+                simp only [lt_add_iff_pos_right, ofNat_pos]
+              · rfl
+            apply h'
+            · rcases hdesc.2.1 with ⟨c, hc⟩
+              rcases hdesc.2.2 with ⟨d, hd⟩
+              use c, d
+              rw[hm, hc, hd] at hab
+              have h1 : (p * c) ^2 = p^2 * c^2 := Nat.mul_pow p c 2
+              have h2 : (p * d) ^2 = p^2 * d^2 := Nat.mul_pow p d 2
+              rw[h1, h2] at hab
+              have h3 : p^2 * c^2 + p^2 * d^2 = p^2* (c^2 + d^2) :=
+                Eq.symm (Nat.mul_add (p ^ 2) (c ^ 2) (d ^ 2))
+              rw[h3] at hab
+              simp only [mul_eq_mul_left_iff, Nat.pow_eq_zero, ne_eq, OfNat.ofNat_ne_zero,
+                not_false_eq_true, and_true] at hab
+              cases hab with
+              | inl h => exact h
+              | inr h =>
+                exfalso
+                rw[h] at hpmod4
+                cases hpmod4
+            · exact hp
+            · exact modEq_modulus_add_iff.mp hpmod4
+  intro n
+  specialize H (countPrimeFactorsMod4Eq3 n) n
+  apply H
+  rfl
 
-  have hP : P n.primeFactors := by
-    classical
-    refine Finset.induction_on (s := n.primeFactors) ?base ?step
-    · intro n hn
-      have hn01 : n = 0 ∨ n = 1 := by
-        simpa only [primeFactors_eq_empty] using hn
-      cases hn01 with
-      | inl h =>
-          constructor
-          · intro hred
-            repeat rw[hn]
-            intro p hp
-            exfalso
-            exact (List.mem_nil_iff p).mp hp
-          · intro hred
-            use 0, 0
-            linarith
-
-      | inr h =>
-          constructor
-          · intro hred
-            intro p hp
-            rw[hn] at hp
-            exfalso
-            exact (List.mem_nil_iff p).mp hp
-          · intro hred
-            use 1 , 0
-            linarith
+theorem primes1or2mod4norm (p : ℕ) [Fact (Nat.Prime p)] (hpmod4 : p = 2 ∨ p ≡ 1 [MOD 4])
+: ∃ z : GaussianInt, p = (z.norm).toNat := by
+      rw[← sum_two_nat_squares_iff_gaussian_norm, prime_sum_two_squares]
+      assumption
+theorem allnatnorm (p : ℕ) :
+ ∃ z : GaussianInt, p^2 = (z.norm).toNat := by
+  use p
+  have hpnorm: (p : GaussianInt).norm = (p : ℤ)^2 := by
+    rw[Zsqrtd.norm_natCast]
+    have : (p : ℤ) * (p : ℤ) = ((p*p) : ℤ) := Int.mul_comm ↑p ↑p
+    rw[this]
+    have hyp (p : ℤ ): p  * p = p^2 := by exact Eq.symm (pow_two p)
+    rw[hyp]
+  rw[hpnorm]
+  exact Eq.symm (Nat.add_zero (NatPow.pow p 2))
 
 
+--This function's syntax and lemmas were defined with the help of AI
+noncomputable def NtoGaussian (n : ℕ) : GaussianInt := by
+  classical
+  by_cases hn : Nat.Prime n
+  · letI : Fact (Nat.Prime n) := ⟨hn⟩
+    by_cases hgood : n = 2 ∨ n ≡ 1 [MOD 4]
+    · exact Classical.choose (primes1or2mod4norm (p := n) (hpmod4 := hgood))
+    · exact Classical.choose (allnatnorm (p := n))
+  · exact 0
+
+lemma NtoGaussian_spec_good (n : ℕ) (hn : Nat.Prime n)
+    (hgood : n = 2 ∨ n ≡ 1 [MOD 4]) :
+    n = ((NtoGaussian n).norm).toNat := by
+  classical
+  haveI : Fact (Nat.Prime n) := ⟨hn⟩
+  simpa [NtoGaussian, hn, hgood] using
+    (Classical.choose_spec (primes1or2mod4norm (p := n) (hpmod4 := hgood)))
+
+lemma prime_not_3_mod_4_iff_2_or_1_mod_4 (p : ℕ) [Fact (Nat.Prime p)] :
+ ¬ p ≡ 3 [MOD 4] ↔ p = 2 ∨ p ≡ 1 [MOD 4] := by
+  constructor
+  · contrapose!
+    intro h'
+    have : p = 2 ∨ p ≡ 1 [MOD 4] ∨ p ≡ 3 [MOD 4] := odd_prime_1_or_3_mod_4 p
+    cases this with
+    | inl h => exfalso; apply h'.1; exact h
+    | inr h =>
+      cases h with
+      | inl h => exfalso; apply h'.2;exact h
+      | inr h => exact h
+  · intro h'
+    cases h' with
+    | inl h =>
+        rw[h]
+        norm_num
+    | inr h =>
+      by_contra c
+      have : 1 ≡ 3 [MOD 4] := ModEq.trans (id (ModEq.symm h)) c
+      cases this
+
+lemma NtoGaussian_spec_bad (n : ℕ) (hn : Nat.Prime n)
+    (hbad : ¬( n = 2 ∨  n ≡ 1 [MOD 4])) :
+    n^2 = ((NtoGaussian n).norm).toNat := by
+  classical
+  haveI : Fact (Nat.Prime n) := ⟨hn⟩
+  simpa [NtoGaussian, hn, hbad] using
+    (Classical.choose_spec (allnatnorm (p := n)))
+
+
+lemma gaussian_norm_pow (x : GaussianInt) (k : ℕ) :
+    Zsqrtd.norm (x ^ k) = (Zsqrtd.norm x) ^ k := by
+  induction k with
+  | zero =>
+      simp
+  | succ k ih =>
+      simp [pow_succ, ih, Zsqrtd.norm_mul, mul_comm]
 
 
 
-    · intro q s hqnotmem ih
-      intro n hn
-      have hqprime : Nat.Prime q := by
-        have hpmem : q ∈ n.primeFactors := by
-          rw[hn]
-          exact Finset.mem_insert_self q s
-        exact prime_of_mem_primeFactors hpmem
-      have hmeminsert (p : ℕ) : p ∈ insert q s ↔  p = q ∨ p ∈ s:= Finset.mem_insert
-
-      constructor
-      · /-Sketch: define m to be the product of all the primes in s raised to their valuations;
-        equivalently m = n/q^r where r is the q-adic valuation of n.
-        By the inductive hypothesis, for each p in m.primeFactors, p≡3 [MOD 4], 2 ∣ m.factorization p
-        Then we prove that for all primes p ≠ q, m.factorization p = n.factorization p
-        Then we split into cases based on p = q or p ≠ q, the latter case done by rw
-        We suppose for a contradiction that 2 ∣ n.factorization q
-        We write m = x.norm for some x : GaussianInt
-        Now we show n/q = (x*q^(r/2)).norm (Note : we use the fact that r/2 = (r-1)/2))
-        We write q^r as (q^(r/2)).norm
-        Then (x * q^(r/2)).norm =
-        Using a theorem to be proved, that x.norm = y.norm ↔ ∃ u, IsUnit u, y = u * x, we conclude
-        from z.norm = n = ()
-
-        -/
-        intro h1
-        rcases h1 with ⟨a,b,hnab⟩
-        rw[hn]
+theorem sum_two_squares_iff (n : ℕ) :
+  (∃ a b : ℕ, n = a^2 + b^2) ↔
+  (∀ p ∈ n.primeFactors, (p ≡ 3 [MOD 4] → Even (n.factorization p))) := by
+  constructor
+  · have : P n := by
+      apply by_countPrimeFactorsMod4Eq3_strong_induction
+    rw[P] at this
+    intro h1
+    apply this at h1
+    intro p hp hpmod4
+    apply h1
+    · exact prime_of_mem_primeFactors hp
+    · exact hpmod4
+  · intro hevenfactors
+    by_cases hn : n = 0
+    · use 0, 0
+      simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, add_zero]
+      exact hn
+    · rw[sum_two_nat_squares_iff_gaussian_norm]
+      let g : ℕ → GaussianInt := fun p =>
+        if ¬ (p = 2 ∨ p ≡ 1 [MOD 4]) then
+          (NtoGaussian p) ^ (n.factorization p / 2)
+        else
+          (NtoGaussian p) ^ (n.factorization p)
+      --This proof hnorm_prod was written with the help of AI
+      have hnorm_prod (t : Finset ℕ) :
+        Zsqrtd.norm (∏ p ∈ t, g p) = ∏ p ∈ t, Zsqrtd.norm (g p) := by
+        classical
+        refine Finset.induction_on t ?base ?step
+        · simp
+        · intro a s ha hs
+          simp only [Int.reduceNeg, ha, not_false_eq_true, Finset.prod_insert, Zsqrtd.norm_mul, hs]
+      let z : GaussianInt :=
+        ∏ p ∈  n.primeFactors, g p
+      use z
+      have hnZ : (n : ℤ) = z.norm := by
+        have hn_fac' : (∏ p ∈ n.primeFactors, p ^ (n.factorization p)) = n := by
+          simpa [Finsupp.prod] using
+            (Nat.factorization_prod_pow_eq_self (n := n) hn)
+        have hn_facZ :
+            (n : ℤ) =
+              (∏ p ∈ n.primeFactors, (p : ℤ) ^ (n.factorization p)) := by
+          have := congrArg (fun t : ℕ => (t : ℤ)) hn_fac'.symm
+          simpa using this
+        refine hn_facZ.trans ?_
+        have hz_norm :
+        z.norm = ∏ p ∈ n.primeFactors, (g p).norm := by
+          simpa [z] using (hnorm_prod (t := n.primeFactors))
+        rw [hz_norm]
+        have hg_norm (p : ℕ) :
+        (g p).norm =
+          if ¬ (p = 2 ∨ p ≡ 1 [MOD 4]) then
+            (Zsqrtd.norm (NtoGaussian p)) ^ (n.factorization p / 2)
+          else
+            (Zsqrtd.norm (NtoGaussian p)) ^ (n.factorization p) := by
+          by_cases hgood : (p = 2 ∨ p ≡ 1 [MOD 4])
+          · simp only [g, hgood]
+            simp only [Int.reduceNeg, not_true_eq_false, ↓reduceIte]
+            rw[gaussian_norm_pow]
+          · simp only [g, hgood]
+            simp only [Int.reduceNeg, not_false_eq_true, ↓reduceIte]
+            rw[gaussian_norm_pow]
+        refine (Finset.prod_congr rfl ?_)
         intro p hp
-        rw[hmeminsert p] at hp
-        cases hp with
-        | inl h =>
-          intro h1mod4
-
-
-
-
-
-
-  -- finally apply hP to your original n (this last line is usually `exact (hP n rfl)` if you’re not inlined)
-  exact hP n rfl
+        rw[hg_norm]
+        by_cases hgood : (p = 2 ∨ p ≡ 1 [MOD 4])
+        · have hpPrime : Nat.Prime p := (Nat.mem_primeFactors.mp hp).1
+          haveI : Fact (Nat.Prime p) := ⟨hpPrime⟩
+          have hNat : p = (Zsqrtd.norm (NtoGaussian p)).toNat :=
+            NtoGaussian_spec_good (n := p) hpPrime hgood
+          have hnn : 0 ≤ Zsqrtd.norm (NtoGaussian p) :=
+            GaussianInt.norm_nonneg (NtoGaussian p)
+          have hZ : (p : ℤ) = Zsqrtd.norm (NtoGaussian p) := by
+            have : p = (Zsqrtd.norm (NtoGaussian p)).toNat := NtoGaussian_spec_good p hpPrime hgood
+            exact (gaussian_norms_are_nat (NtoGaussian p) p).mpr hNat
+          simp [hgood, hZ]
+        · have hpPrime : Nat.Prime p := (Nat.mem_primeFactors.mp hp).1
+          haveI : Fact (Nat.Prime p) := ⟨hpPrime⟩
+          have hNat : p^2 = (Zsqrtd.norm (NtoGaussian p)).toNat :=
+            NtoGaussian_spec_bad (n := p) hpPrime hgood
+          have hnn : 0 ≤ Zsqrtd.norm (NtoGaussian p) := GaussianInt.norm_nonneg (NtoGaussian p)
+          have hZ2 : ((p : ℤ) ^ 2) = Zsqrtd.norm (NtoGaussian p) := by
+            have : p^2 ≠ 0 →
+            p^2 = (Zsqrtd.norm (NtoGaussian p)).toNat →
+            (p^2 : ℤ ) = (Zsqrtd.norm (NtoGaussian p)).toNat := by
+              exact (fun a a_1 ↦
+                Eq.symm
+                  ((fun {a b} ↦ Int.neg_inj.mp)
+                    (congrArg Neg.neg (congrArg Nat.cast (id (Eq.symm hNat))))))
+            have hp2ne0 : p^2 ≠ 0 := by
+              exact Ne.symm (NeZero.ne' (p ^ 2))
+            apply this at hp2ne0
+            apply hp2ne0 at hNat
+            have : (((Zsqrtd.norm (NtoGaussian p)).toNat) : ℤ) = (Zsqrtd.norm (NtoGaussian p)) := by
+              exact
+              (gaussian_norms_are_nat (NtoGaussian p) (Zsqrtd.norm (NtoGaussian p)).toNat).mpr rfl
+            rw[this] at hNat
+            exact hNat
+          have hpmod3 : p ≡ 3 [MOD 4] := by
+            by_contra c
+            rw[prime_not_3_mod_4_iff_2_or_1_mod_4] at c
+            apply hgood
+            exact c
+          have heven : Even (n.factorization p) := hevenfactors p hp hpmod3
+          have hdiv2 : 2 ∣ n.factorization p :=
+            even_iff_two_dvd.mp (hevenfactors p hp hpmod3)
+          have hmul : 2 * (n.factorization p / 2) = n.factorization p :=
+            Nat.mul_div_cancel' hdiv2
+          have : ((p : ℤ) ^ 2) ^ (n.factorization p / 2) = (p : ℤ) ^ n.factorization p := by
+            calc
+              ((p : ℤ) ^ 2) ^ (n.factorization p / 2)
+                  = (p : ℤ) ^ (2 * (n.factorization p / 2)) := by
+                      simp [pow_mul]
+              _   = (p : ℤ) ^ n.factorization p := by
+                      simp [hmul]
+          simp [hgood, hZ2, this.symm]
+      exact (gaussian_norms_are_nat z n).mp hnZ
