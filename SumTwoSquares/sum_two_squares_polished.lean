@@ -725,8 +725,8 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
       symm
       exact idk.left
 
---This function counts the total number of prime divisors of n congruent to 3 mod 4, counting
---multiplicities. This is used to do induction later on
+/-- This function counts the total number of prime divisors of n congruent to 3 mod 4, counting
+multiplicities. This is used to do induction later on. -/
 def countPrimeFactorsMod4Eq3 (n : ℕ) : ℕ :=
   ∑ p ∈  ((Nat.factorization n).support).filter (fun p => p % 4 = 3),
     Nat.factorization n p
@@ -853,8 +853,8 @@ lemma factorization_after_div_by_p2
 
 
 
---The forward direction of our main theorem. We use this definition simply for
---ease of notation
+/-- The forward direction of our main theorem. We use this definition simply for
+ease of notation. -/
 def P (n : ℕ) : Prop :=
   (∃ a b : ℕ, n = a^2 + b^2) →
     ∀ p, Nat.Prime p →  (p ≡ 3 [MOD 4] → Even (n.factorization p))
@@ -1245,10 +1245,9 @@ lemma prime_not_3_mod_4_iff_2_or_1_mod_4 (p : ℕ) [Fact (Nat.Prime p)] :
       cases this
 
 
---This function's syntax and subsequent lemmas were defined with the help of AI
---This function selects a witness in the Gaussian integers to z.norm = p if p = 2 or
--- p ≡ 1 [MOD 4], selects a witness to z.norm = p^2 for all other primes, and sends
---nonprimes to 0
+/-- This function selects a witness in the Gaussian integers to z.norm = p if p = 2 or
+p ≡ 1 [MOD 4], selects a witness to z.norm = p^2 for all other primes, and sends
+nonprimes to 0. -/
 noncomputable def NtoGaussian (n : ℕ) : GaussianInt := by
   classical
   by_cases hn : Nat.Prime n
@@ -1292,7 +1291,7 @@ lemma gaussian_norm_pow (x : GaussianInt) (k : ℕ) :
 
 theorem sum_two_squares_iff (n : ℕ) :
   (∃ a b : ℕ, n = a^2 + b^2) ↔
-  (∀ p ∈ n.primeFactors, (p ≡ 3 [MOD 4] → Even (n.factorization p))) := by
+  (∀ p ∈ n.primeFactors, p ≡ 3 [MOD 4] → Even (n.factorization p)) := by
   constructor
   · --The forward direction in just housekeeping due to our previous theorem Pn_for_all_n
     have : P n := by
