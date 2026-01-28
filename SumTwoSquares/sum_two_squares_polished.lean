@@ -728,7 +728,7 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
 /-- This function counts the total number of prime divisors of n congruent to 3 mod 4, counting
 multiplicities. This is used to do induction later on. -/
 def countPrimeFactorsMod4Eq3 (n : ℕ) : ℕ :=
-  ∑ p ∈  ((n.factorization).support).filter (fun p => p % 4 = 3),
+  ∑ p ∈  (n.primeFactors).filter (fun p => p % 4 = 3),
     Nat.factorization n p
 
 
@@ -964,9 +964,6 @@ theorem Pn_for_all_n :
                   (f := fun q => n.factorization q)
                   (p := p)
                   hpS)
-            have hrewritetrick (x : ℕ) : x.factorization.support = x.primeFactors :=
-              Nat.support_factorization x
-            rw[hrewritetrick m, hrewritetrick n]
             rw[hsplit]
             --Unfortunately, we must break into cases as to whether p ∣ m because
             -- it changes whether m.primeFactors.erase p makes sense. The good news
