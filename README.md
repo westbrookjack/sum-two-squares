@@ -1,13 +1,12 @@
-# sum_two_squares
+## Structure of the project
 
-## GitHub configuration
+- `SumTwoSquares.lean`  
+  **Main file for assessment.**  
+  Contains the complete formalization of the sum of two squares theorem.
 
-To set up your new GitHub repository, follow these steps:
+- `sum_two_squares_polished.lean`  
+  Final, streamlined version used for grading.
 
-* Under your repository name, click **Settings**.
-* In the **Actions** section of the sidebar, click "General".
-* Check the box **Allow GitHub Actions to create and approve pull requests**.
-* Click the **Pages** section of the settings sidebar.
-* In the **Source** dropdown menu, select "GitHub Actions".
-
-After following the steps above, you can remove this section from the README file.
+- `sum_two_squares_unpolished.lean`  
+  Auxiliary lemmas and exploratory results proved during development.  
+  **Not required for the main theorem and not intended for assessment.**
