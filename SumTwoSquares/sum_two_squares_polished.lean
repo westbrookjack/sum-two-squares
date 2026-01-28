@@ -729,7 +729,7 @@ theorem prime_sum_two_squares (p : ℕ) [Fact (Nat.Prime p)] :
 multiplicities. This is used to do induction later on. -/
 def countPrimeFactorsMod4Eq3 (n : ℕ) : ℕ :=
   ∑ p ∈ (n.primeFactors).filter (fun p => p % 4 = 3),
-    Nat.factorization n p
+    n.factorization p
 
 
 --This is a key ingredient in the proof of the forward direction of the main theorem, allowing us to
