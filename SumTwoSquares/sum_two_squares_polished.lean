@@ -968,6 +968,9 @@ theorem Pn_for_all_n :
             --Unfortunately, we must break into cases as to whether p ∣ m because
             -- it changes whether m.primeFactors.erase p makes sense. The good news
             --is that the proof is highly similar in both cases
+            --I remark now that I don't believe it was necessary to do this case division, since I
+            --Lean interprets erasing a nonmember as doing nothing.
+            --However, since this proof works, I will stick with it
             by_cases hpinfactors' : p ∈ m.primeFactors
             · have hpS' : p ∈ m.primeFactors.filter (fun q => q % 4 = 3) := by
                 apply Finset.mem_filter.2
