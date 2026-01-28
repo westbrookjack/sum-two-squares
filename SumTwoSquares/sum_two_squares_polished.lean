@@ -1323,6 +1323,9 @@ theorem sum_two_squares_iff (n : ℕ) :
           (NtoGaussian p) ^ (n.factorization p / 2)
         else
           (NtoGaussian p) ^ (n.factorization p)
+      let z : GaussianInt :=
+        ∏ p ∈  n.primeFactors, g p
+      use z
       --The proof of hnorm_prod was written with the help of AI
       -- We just want to distribute the norm over the product using the
       -- fact that the norm distributes over binary products
@@ -1333,9 +1336,6 @@ theorem sum_two_squares_iff (n : ℕ) :
         · simp
         · intro a s ha hs
           simp only [Int.reduceNeg, ha, not_false_eq_true, Finset.prod_insert, Zsqrtd.norm_mul, hs]
-      let z : GaussianInt :=
-        ∏ p ∈  n.primeFactors, g p
-      use z
       --Due to our earlier lemma gaussian_norms_are_nat, the proposition
       --hnZ (equality of integers) is equivalent to our goal (equality of natural numbers)
       have hnZ : (n : ℤ) = z.norm := by
